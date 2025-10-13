@@ -46,7 +46,7 @@ public class SecurityConfig {
                         .anyRequest().authenticated()
                 )
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-                .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class) // ✅ thêm filter vào chain
+                .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class) //  thêm filter vào chain
                 .formLogin(form -> form.disable())
                 .httpBasic(Customizer.withDefaults());;
         return http.build();
