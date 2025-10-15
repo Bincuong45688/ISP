@@ -21,7 +21,6 @@ public interface CustomerMapper {
     @Mapping(source = "account.phone", target = "phone")
     CustomerResponse toResponse(Customer customer);
 
-    @Mapping(source = "fullName", target = "customerName")
     @Mapping(target = "account", ignore = true)
     @Mapping(target = "customerId", ignore = true)
     void updateCustomerFromRequest(UpdateCustomerRequest request, @MappingTarget Customer customer);
