@@ -12,7 +12,7 @@ public class CorsConfig implements WebMvcConfigurer {
         registry.addMapping("/**")
 
                 .allowedOrigins(
-                        "https://isp-frontend.onrender.com",
+                        "https://isp-7jpp.onrender.com",
                         "http://localhost:3000"
                 )
                 // Cho phép tất cả method cần thiết
