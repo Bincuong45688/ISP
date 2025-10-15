@@ -4,6 +4,7 @@ import com.example.isp.security.JwtAuthFilter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
@@ -29,26 +30,41 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
-                .csrf(csrf -> csrf.disable())
+                .cors(Customizer.withDefaults())
+                .csrf(AbstractHttpConfigurer::disable)
+                .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers(
-                                "/api/customer/register",
-                                "/api/customer/login"
+                        // ===== Public auth endpoints =====
+                        .requestMatchers(HttpMethod.POST,
+                                "/api/customer/login", "/api/customer/register",
+                                "/api/staff/login", "/api/staff/register"
                         ).permitAll()
-                        .requestMatchers(
-                                "/api/staff/**"
-                        ).permitAll()
-                        .requestMatchers(
-                                "/v3/api-docs/**",
-                                "/swagger-ui/**",
-                                "/swagger-ui.html"
-                        ).permitAll()
+
+                        // ===== Swagger =====
+                        .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
+
+                        // ===== Read APIs =====
+                        .requestMatchers(HttpMethod.GET, "/api/categories/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/products/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/regions/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/product-details/**").authenticated()
+
+                        // ===== Write APIs: dùng ROLE_STAFF  =====
+                        .requestMatchers(HttpMethod.POST,
+                                "/api/categories/**", "/api/products/**", "/api/product-details/**", "/api/regions/**")
+                        .hasRole("STAFF")
+                        .requestMatchers(HttpMethod.PUT,
+                                "/api/categories/**", "/api/products/**", "/api/product-details/**", "/api/regions/**")
+                        .hasRole("STAFF")
+                        .requestMatchers(HttpMethod.DELETE,
+                                "/api/categories/**", "/api/products/**", "/api/product-details/**", "/api/regions/**")
+                        .hasRole("STAFF")
+
                         .anyRequest().authenticated()
                 )
-                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-                .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class) // ✅ thêm filter vào chain
-                .formLogin(form -> form.disable())
-                .httpBasic(Customizer.withDefaults());;
+                .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class)
+                .formLogin(f -> f.disable());
+
         return http.build();
     }
 

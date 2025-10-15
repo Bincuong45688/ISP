@@ -26,42 +26,42 @@ public class JwtAuthFilter extends OncePerRequestFilter {
     protected void doFilterInternal(HttpServletRequest request,
                                     HttpServletResponse response,
                                     FilterChain filterChain) throws ServletException, IOException {
-        // Bỏ qua các endpoint public
-        final String path = request.getServletPath();
-        if (path.contains("/api/customer/login") || path.contains("/api/customer/register")){
+
+        String path = request.getRequestURI();
+
+        // ===== BYPASS các endpoint public =====
+        if (path.startsWith("/api/customer/login")
+                || path.startsWith("/api/customer/register")
+                || path.startsWith("/api/staff/login")
+                || path.startsWith("/api/staff/register")
+                || path.startsWith("/v3/api-docs")
+                || path.startsWith("/swagger-ui")) {
             filterChain.doFilter(request, response);
             return;
         }
 
-        final String authHeader = request.getHeader("Authorization");
-        final String jwt;
-        final String username;
-
-        // Không có token --> bỏ qua
-        if(authHeader == null || !authHeader.startsWith("Bearer ")) {
+        // ===== Thiếu Authorization hoặc không phải Bearer => CHO QUA để Security quyết định =====
+        String authHeader = request.getHeader("Authorization");
+        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
             filterChain.doFilter(request, response);
             return;
         }
 
-        jwt = authHeader.substring(7);
-        username = jwtService.extractUsername(jwt);
+        String jwt = authHeader.substring(7);
+        String username = jwtService.extractUsername(jwt);
 
-        if(username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
-            UserDetails userDetails = this.userDetailsService.loadUserByUsername(username);
-
-            if(jwtService.isTokenValid(jwt, userDetails)){
-                UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
-                        userDetails,
-                        null,
-                        userDetails.getAuthorities()
-                );
+        // Set Authentication nếu token hợp lệ
+        if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
+            UserDetails userDetails = userDetailsService.loadUserByUsername(username);
+            if (jwtService.isTokenValid(jwt, userDetails)) {
+                UsernamePasswordAuthenticationToken authToken =
+                        new UsernamePasswordAuthenticationToken(
+                                userDetails, null, userDetails.getAuthorities());
                 authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
-
-                // Gắn user vào SecurityContext
                 SecurityContextHolder.getContext().setAuthentication(authToken);
-                }
             }
-        filterChain.doFilter(request, response);
+        }
 
+        filterChain.doFilter(request, response);
     }
 }
