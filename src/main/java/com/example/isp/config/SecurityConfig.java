@@ -35,39 +35,48 @@ public class SecurityConfig {
                 .csrf(AbstractHttpConfigurer::disable)
                 .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
-                        // ===== Public auth endpoints =====
+                        // Preflight CORS
+                        .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+
+                        // Swagger
+                        .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
+
+                        // Auth public
                         .requestMatchers(HttpMethod.POST,
                                 "/api/customer/login", "/api/customer/register",
                                 "/api/staff/login", "/api/staff/register"
                         ).permitAll()
 
-                        // ===== Swagger =====
-                        .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
-
-                        // ===== Read APIs =====
+                        // Read public
                         .requestMatchers(HttpMethod.GET, "/api/categories/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/products/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/regions/**").permitAll()
+                        // Nếu muốn mở product-details cũng public thì đổi dòng dưới thành permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/product-details/**").authenticated()
 
-                        // ===== Write APIs: dùng ROLE_STAFF  =====
-                        .requestMatchers(HttpMethod.POST,
-                                "/api/categories/**", "/api/products/**", "/api/product-details/**", "/api/regions/**")
-                        .hasRole("STAFF")
-                        .requestMatchers(HttpMethod.PUT,
-                                "/api/categories/**", "/api/products/**", "/api/product-details/**", "/api/regions/**")
-                        .hasRole("STAFF")
-                        .requestMatchers(HttpMethod.DELETE,
-                                "/api/categories/**", "/api/products/**", "/api/product-details/**", "/api/regions/**")
-                        .hasRole("STAFF")
+                        // Write: STAFF
+                                // Write: STAFF
+                                .requestMatchers(HttpMethod.POST,
+                                        "/api/categories/**", "/api/products/**", "/api/product-details/**", "/api/regions/**"
+                                ).hasAnyAuthority("ROLE_STAFF","STAFF")
+                                .requestMatchers(HttpMethod.PUT,
+                                        "/api/categories/**", "/api/products/**", "/api/product-details/**", "/api/regions/**"
+                                ).hasAnyAuthority("ROLE_STAFF","STAFF")
+                                .requestMatchers(HttpMethod.DELETE,
+                                        "/api/categories/**", "/api/products/**", "/api/product-details/**", "/api/regions/**"
+                                ).hasAnyAuthority("ROLE_STAFF","STAFF")
+
+// Uploads: STAFF (giữ nguyên)
+                                .requestMatchers(HttpMethod.POST, "/api/uploads/**").hasAnyAuthority("ROLE_STAFF","STAFF")
+                                .requestMatchers(HttpMethod.DELETE, "/api/uploads/**").hasAnyAuthority("ROLE_STAFF","STAFF")
 
                         .anyRequest().authenticated()
                 )
                 .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class)
                 .formLogin(f -> f.disable());
-
         return http.build();
     }
+
 
 
     @Bean

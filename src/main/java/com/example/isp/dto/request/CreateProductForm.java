@@ -1,11 +1,14 @@
 package com.example.isp.dto.request;
 
+import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.*;
 import lombok.*;
+import org.springframework.web.multipart.MultipartFile;
+
 import java.math.BigDecimal;
 
 @Getter @Setter @NoArgsConstructor @AllArgsConstructor @Builder
-public class CreateProductRequest {
+public class CreateProductForm {
 
     @NotBlank
     private String productName;
@@ -15,11 +18,13 @@ public class CreateProductRequest {
 
     private String productDescription;
 
-    private String productImage; // có thể là URL hoặc upload sau
-
     @NotNull
     private Long categoryId;
 
     @NotNull
     private Long regionId;
+
+    @Schema(type = "string", format = "binary", description = "Ảnh sản phẩm")
+    @NotNull
+    private MultipartFile file; // <-- Swagger sẽ hiện Choose file
 }
