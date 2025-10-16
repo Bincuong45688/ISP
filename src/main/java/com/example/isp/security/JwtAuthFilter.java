@@ -52,14 +52,13 @@ public class JwtAuthFilter extends OncePerRequestFilter {
                 path.startsWith("/api/products")
                         || path.startsWith("/api/categories")
                         || path.startsWith("/api/regions")
-                // mở nếu bạn muốn product-details GET là public
-
+                // || path.startsWith("/api/product-details") // mở nếu muốn public
         )) {
             filterChain.doFilter(request, response);
             return;
         }
 
-
+        // 4) Thiếu Authorization hoặc không phải Bearer => cho đi tiếp (Security quyết định)
         String authHeader = request.getHeader("Authorization");
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
             filterChain.doFilter(request, response);
