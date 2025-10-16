@@ -40,6 +40,7 @@ public class JwtAuthFilter extends OncePerRequestFilter {
             return;
         }
 
+
         // ===== Thiếu Authorization hoặc không phải Bearer => CHO QUA để Security quyết định =====
         String authHeader = request.getHeader("Authorization");
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
