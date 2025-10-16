@@ -23,11 +23,10 @@ public class CloudinaryServiceImpl implements CloudinaryService {
     @Override
     public String uploadImage(MultipartFile file, String folder) {
         try {
-            String targetFolder = (folder != null && !folder.isBlank()) ? folder : defaultFolder;
             Map<?, ?> res = cloudinary.uploader().upload(
                     file.getBytes(),
                     ObjectUtils.asMap(
-                            "folder", targetFolder,
+                            "folder", folder != null ? folder : defaultFolder,
                             "resource_type", "image",
                             "overwrite", true
                     )

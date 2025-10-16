@@ -28,19 +28,38 @@ public class JwtAuthFilter extends OncePerRequestFilter {
                                     FilterChain filterChain) throws ServletException, IOException {
 
         String path = request.getRequestURI();
+        String method = request.getMethod();
 
-        // ===== BYPASS các endpoint public =====
-        if (path.startsWith("/api/customer/login")
-                || path.startsWith("/api/customer/register")
-                || path.startsWith("/api/staff/login")
-                || path.startsWith("/api/staff/register")
-                || path.startsWith("/v3/api-docs")
-                || path.startsWith("/swagger-ui")) {
+        // 1) Bypass preflight
+        if ("OPTIONS".equalsIgnoreCase(method)) {
             filterChain.doFilter(request, response);
             return;
         }
 
-        // ===== Thiếu Authorization hoặc không phải Bearer => CHO QUA để Security quyết định =====
+        // 2) Bypass Swagger & Auth public
+        if (path.startsWith("/v3/api-docs")
+                || path.startsWith("/swagger-ui")
+                || path.startsWith("/api/customer/login")
+                || path.startsWith("/api/customer/register")
+                || path.startsWith("/api/staff/login")
+                || path.startsWith("/api/staff/register")) {
+            filterChain.doFilter(request, response);
+            return;
+        }
+
+        // 3) Bypass các endpoint GET public đúng như SecurityConfig
+        if ("GET".equalsIgnoreCase(method) && (
+                path.startsWith("/api/products")
+                        || path.startsWith("/api/categories")
+                        || path.startsWith("/api/regions")
+                // mở nếu bạn muốn product-details GET là public
+
+        )) {
+            filterChain.doFilter(request, response);
+            return;
+        }
+
+
         String authHeader = request.getHeader("Authorization");
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
             filterChain.doFilter(request, response);
@@ -48,9 +67,15 @@ public class JwtAuthFilter extends OncePerRequestFilter {
         }
 
         String jwt = authHeader.substring(7);
-        String username = jwtService.extractUsername(jwt);
+        String username = null;
+        try {
+            username = jwtService.extractUsername(jwt);
+        } catch (Exception ignored) {
+            // token lỗi -> không set auth, nhưng vẫn cho đi tiếp
+            filterChain.doFilter(request, response);
+            return;
+        }
 
-        // Set Authentication nếu token hợp lệ
         if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
             UserDetails userDetails = userDetailsService.loadUserByUsername(username);
             if (jwtService.isTokenValid(jwt, userDetails)) {

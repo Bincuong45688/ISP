@@ -1,10 +1,10 @@
 package com.example.isp.service;
 
-import com.example.isp.model.*;
-import com.example.isp.repository.*;
+import com.example.isp.model.Product;
+import com.example.isp.repository.ProductRepository;
 import com.example.isp.service.ProductService;
-import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -16,62 +16,47 @@ import java.util.List;
 public class ProductServiceImpl implements ProductService {
 
     private final ProductRepository productRepo;
-    private final CategoryRepository categoryRepo;
-    private final RegionRepository regionRepo;
 
     @Override
-    public Product create(Product product) {
-        if (product.getCategory() != null) {
-            Category category = categoryRepo.findById(product.getCategory().getCategoryId())
-                    .orElseThrow(() -> new EntityNotFoundException("Category not found"));
-            product.setCategory(category);
-        }
-        if (product.getRegion() != null) {
-            Region region = regionRepo.findById(product.getRegion().getRegionId())
-                    .orElseThrow(() -> new EntityNotFoundException("Region not found"));
-            product.setRegion(region);
-        }
-        return productRepo.save(product);
-    }
-
-    @Override
-    public Product update(Long id, Product product) {
-        Product existing = productRepo.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException("Product not found"));
-
-        if (product.getProductName() != null)
-            existing.setProductName(product.getProductName());
-        if (product.getPrice() != null)
-            existing.setPrice(product.getPrice());
-        if (product.getProductDescription() != null)
-            existing.setProductDescription(product.getProductDescription());
-        if (product.getProductImage() != null)
-            existing.setProductImage(product.getProductImage());
-        if (product.getCategory() != null)
-            existing.setCategory(categoryRepo.findById(product.getCategory().getCategoryId())
-                    .orElseThrow(() -> new EntityNotFoundException("Category not found")));
-        if (product.getRegion() != null)
-            existing.setRegion(regionRepo.findById(product.getRegion().getRegionId())
-                    .orElseThrow(() -> new EntityNotFoundException("Region not found")));
-
-        return productRepo.save(existing);
-    }
-
-    @Override
-    public Product get(Long id) {
-        return productRepo.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException("Product not found"));
-    }
-
-    @Override
+    @Transactional(readOnly = true)
     public List<Product> list() {
-        return productRepo.findAll();
+        return productRepo.findAllWithRelations(Sort.by(Sort.Order.desc("productId")));
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Product get(Long id) {
+        return productRepo.findByIdWithRelations(id).orElseThrow();
+    }
+
+    @Override
+    public Product create(Product p) {
+        return productRepo.save(p);
+    }
+
+    @Override
+    public Product update(Long id, Product patch) {
+        Product cur = productRepo.findById(id).orElseThrow();
+        if (patch.getProductName() != null) cur.setProductName(patch.getProductName());
+        if (patch.getPrice() != null) cur.setPrice(patch.getPrice());
+        if (patch.getProductDescription() != null) cur.setProductDescription(patch.getProductDescription());
+        if (patch.getProductImage() != null) cur.setProductImage(patch.getProductImage());
+        if (patch.getCategory() != null) cur.setCategory(patch.getCategory());
+        if (patch.getRegion() != null) cur.setRegion(patch.getRegion());
+        return productRepo.save(cur);
     }
 
     @Override
     public void delete(Long id) {
-        if (!productRepo.existsById(id))
-            throw new EntityNotFoundException("Product not found");
         productRepo.deleteById(id);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<Product> searchByName(String keyword) {
+        if (keyword == null || keyword.isBlank()) {
+            return productRepo.findAllWithRelations(Sort.by(Sort.Order.desc("productId")));
+        }
+        return productRepo.searchByName(keyword);
     }
 }
