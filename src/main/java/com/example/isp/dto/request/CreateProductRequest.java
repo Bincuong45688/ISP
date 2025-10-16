@@ -1,13 +1,12 @@
-// dto/request/CreateProductRequest.java
 package com.example.isp.dto.request;
 
 import jakarta.validation.constraints.*;
-import lombok.Getter;
-import lombok.Setter;
-
+import lombok.*;
 import java.math.BigDecimal;
-@Getter @Setter
+
+@Getter @Setter @NoArgsConstructor @AllArgsConstructor @Builder
 public class CreateProductRequest {
+
     @NotBlank
     private String productName;
 
@@ -15,13 +14,12 @@ public class CreateProductRequest {
     private BigDecimal price;
 
     private String productDescription;
-    private String productImage;
+
+    private String productImage; // có thể là URL hoặc upload sau
 
     @NotNull
     private Long categoryId;
 
     @NotNull
     private Long regionId;
-
-
 }
