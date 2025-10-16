@@ -1,55 +1,21 @@
+// src/main/java/com/example/isp/service/ProductService.java
 package com.example.isp.service;
 
-import com.example.isp.model.Product;
+import com.example.isp.dto.request.CreateProductRequest;
+import com.example.isp.dto.request.UpdateProductRequest;
+import com.example.isp.dto.response.ProductResponse;
+
 import java.util.List;
 
 public interface ProductService {
-
-    /**
-     * Tạo mới một sản phẩm.
-     * @param p đối tượng Product cần lưu
-     * @return Product sau khi được lưu
-     */
-    Product create(Product p);
-
-    /**
-     * Cập nhật thông tin sản phẩm theo ID.
-     * @param id ID sản phẩm cần cập nhật
-     * @param u thông tin mới
-     * @return Product sau khi cập nhật
-     */
-    Product update(Long id, Product u);
-
-    /**
-     * Lấy danh sách toàn bộ sản phẩm.
-     * @return Danh sách Product
-     */
-    List<Product> list();
-
-    /**
-     * Lấy danh sách sản phẩm theo Category ID.
-     * @param categoryId ID của danh mục
-     * @return Danh sách sản phẩm thuộc danh mục đó
-     */
-    List<Product> byCategory(Long categoryId);
-
-    /**
-     * Lấy danh sách sản phẩm theo Region ID.
-     * @param regionId ID của vùng miền
-     * @return Danh sách sản phẩm thuộc vùng đó
-     */
-    List<Product> byRegion(Long regionId);
-
-    /**
-     * Tìm kiếm sản phẩm theo tên (không phân biệt hoa thường).
-     * @param q chuỗi tìm kiếm
-     * @return Danh sách sản phẩm phù hợp
-     */
-    List<Product> search(String q);
-
-    /**
-     * Xóa sản phẩm theo ID.
-     * @param id ID của sản phẩm cần xóa
-     */
+    List<ProductResponse> list();
+    ProductResponse get(Long id);
+    ProductResponse create(CreateProductRequest req);
+    ProductResponse update(Long id, UpdateProductRequest req);
     void delete(Long id);
+
+    // optional filter/search
+    List<ProductResponse> byCategory(Long categoryId);
+    List<ProductResponse> byRegion(Long regionId);
+    List<ProductResponse> search(String q);
 }

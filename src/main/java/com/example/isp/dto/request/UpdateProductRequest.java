@@ -1,17 +1,26 @@
+// dto/request/UpdateProductRequest.java
 package com.example.isp.dto.request;
 
+import jakarta.validation.constraints.*;
 import lombok.Getter;
 import lombok.Setter;
+
 import java.math.BigDecimal;
-
-@Getter
-@Setter
+@Getter @Setter
 public class UpdateProductRequest {
+    @NotBlank
+    private String productName;
 
-    private String productName;        // Tên sản phẩm mới (nếu đổi)
-    private BigDecimal price;          // Giá mới (nếu đổi)
-    private String productDescription; // Mô tả mới
-    private String productImage;       // Ảnh mới
-    private Long categoryId;           // Chuyển sang danh mục khác (nếu có)
-    private Long regionId;             // Chuyển sang vùng khác (nếu có)
+    @NotNull @DecimalMin("0.0")
+    private BigDecimal price;
+
+    private String productDescription;
+    private String productImage;
+
+    @NotNull
+    private Long categoryId;
+
+    @NotNull
+    private Long regionId;
+
 }
