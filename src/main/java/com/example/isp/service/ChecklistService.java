@@ -1,12 +1,11 @@
 package com.example.isp.service;
 
-
-import com.example.isp.model.enums.Checklist;
-
+import com.example.isp.dto.ChecklistDTO;
 import java.util.List;
 
 public interface ChecklistService {
-    List<Checklist> getByRitual(Long ritualId);
-    Checklist addChecklist(Checklist checklist);
+    List<ChecklistDTO> getByRitual(Long ritualId);
+    ChecklistDTO addChecklist(ChecklistDTO dto);
+    ChecklistDTO updateChecklist(Long id, ChecklistDTO dto);
     void deleteChecklist(Long id);
 }

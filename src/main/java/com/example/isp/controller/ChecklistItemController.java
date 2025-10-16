@@ -1,10 +1,14 @@
 package com.example.isp.controller;
 
-
+import com.example.isp.config.SecurityRoles;
 import com.example.isp.model.ChecklistItem;
-import com.example.isp.repository.ChecklistItemRepository;
+import com.example.isp.service.ChecklistItemService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -12,42 +16,44 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/checklist-items")
 @RequiredArgsConstructor
+@Tag(name = "Checklist Item Management", description = "Quản lý vật phẩm checklist")
 public class ChecklistItemController {
 
-    private final ChecklistItemRepository itemRepository;
+    private final ChecklistItemService service;
 
+    // 📌 Public: Lấy toàn bộ item
+    @Operation(summary = "Lấy toàn bộ checklist item")
     @GetMapping
-    public List<ChecklistItem> getAll() {
-        return itemRepository.findAll();
+    public ResponseEntity<List<ChecklistItem>> getAll() {
+        return ResponseEntity.ok(service.getAll());
     }
 
+    @Operation(summary = "Lấy checklist item theo ID")
     @GetMapping("/{id}")
     public ResponseEntity<ChecklistItem> getById(@PathVariable Long id) {
-        return itemRepository.findById(id)
-                .map(ResponseEntity::ok)
-                .orElse(ResponseEntity.notFound().build());
+        return ResponseEntity.ok(service.getById(id));
     }
 
+    // 🧑‍💼 STAFF: Quản trị CRUD
+    @Operation(summary = "Tạo checklist item", security = @SecurityRequirement(name = "bearerAuth"))
+    @PreAuthorize(SecurityRoles.STAFF)
     @PostMapping
-    public ChecklistItem create(@RequestBody ChecklistItem item) {
-        return itemRepository.save(item);
+    public ResponseEntity<ChecklistItem> create(@RequestBody ChecklistItem item) {
+        return ResponseEntity.ok(service.create(item));
     }
 
+    @Operation(summary = "Cập nhật checklist item", security = @SecurityRequirement(name = "bearerAuth"))
+    @PreAuthorize(SecurityRoles.STAFF)
     @PutMapping("/{id}")
-    public ResponseEntity<ChecklistItem> update(@PathVariable Long id, @RequestBody ChecklistItem updated) {
-        return itemRepository.findById(id)
-                .map(item -> {
-                    item.setItemName(updated.getItemName());
-                    item.setItemDescription(updated.getItemDescription());
-                    item.setUnit(updated.getUnit());
-                    return ResponseEntity.ok(itemRepository.save(item));
-                })
-                .orElse(ResponseEntity.notFound().build());
+    public ResponseEntity<ChecklistItem> update(@PathVariable Long id, @RequestBody ChecklistItem item) {
+        return ResponseEntity.ok(service.update(id, item));
     }
 
+    @Operation(summary = "Xóa checklist item", security = @SecurityRequirement(name = "bearerAuth"))
+    @PreAuthorize(SecurityRoles.STAFF)
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> delete(@PathVariable Long id) {
-        itemRepository.deleteById(id);
+        service.delete(id);
         return ResponseEntity.noContent().build();
     }
 }

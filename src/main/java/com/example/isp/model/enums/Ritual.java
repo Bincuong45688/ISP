@@ -19,11 +19,12 @@ public class Ritual {
     @Column(nullable = false, unique = true)
     private String ritualName;
 
+
     @Column(length = 255)
     private String description;
 
     @Column(nullable = false)
-    private String region; // Miền Bắc / Miền Trung / Miền Nam
+    private String region; // Miền Bắc / Miền Trung / Miền Nam/
 
     @Column(nullable = false)
     private boolean active = true;
