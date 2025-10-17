@@ -37,6 +37,7 @@ public class SecurityConfig {
                         // ===== Public auth endpoints =====
                         .requestMatchers(HttpMethod.POST,
                                 "/api/customer/login", "/api/customer/register",
+                                "/api/customer/verify-email",
                                 "/api/staff/login", "/api/staff/register"
                         ).permitAll()
 
