@@ -4,6 +4,9 @@ import com.example.isp.model.enums.Role;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+
 @Entity @Table(name = "account")
 @Getter @Setter
 @NoArgsConstructor @AllArgsConstructor
@@ -26,4 +29,14 @@ public class Account {
 
     @Enumerated(EnumType.STRING)
     private Role role;
+
+    @Column(name = "status")
+    private String status;
+
+    @Column(name = "otp_code")
+    private String otpCode;
+
+    @Column(name = "otp_expired_at")
+    private LocalDateTime otpExpiredAt;
+
 }
