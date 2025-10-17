@@ -41,6 +41,7 @@ public class JwtAuthFilter extends OncePerRequestFilter {
                 || path.startsWith("/swagger-ui")
                 || path.startsWith("/api/customer/login")
                 || path.startsWith("/api/customer/register")
+                || path.startsWith("/api/customer/verify-email")
                 || path.startsWith("/api/staff/login")
                 || path.startsWith("/api/staff/register")) {
             filterChain.doFilter(request, response);
