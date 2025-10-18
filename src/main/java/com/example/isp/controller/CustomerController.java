@@ -3,8 +3,10 @@ package com.example.isp.controller;
 import com.example.isp.dto.request.LoginRequest;
 import com.example.isp.dto.request.RegisterCustomerRequest;
 import com.example.isp.dto.request.UpdateCustomerRequest;
+import com.example.isp.dto.request.VerifyEmailRequest;
 import com.example.isp.dto.response.AuthResponse;
 import com.example.isp.dto.response.CustomerResponse;
+import com.example.isp.dto.response.VerifyEmailResponse;
 import com.example.isp.model.Customer;
 import com.example.isp.service.CustomerService;
 import jakarta.validation.Valid;
@@ -23,6 +25,12 @@ public class CustomerController {
     @PostMapping("/register")
     public ResponseEntity<CustomerResponse> register(@Valid @RequestBody RegisterCustomerRequest request) {
         CustomerResponse response = customerService.createCustomer(request);
+        return ResponseEntity.ok(response);
+    }
+
+    @PostMapping("/verify-email")
+    public ResponseEntity<VerifyEmailResponse> verifyEmail(@RequestBody VerifyEmailRequest request) {
+        VerifyEmailResponse response = customerService.verifyEmail(request);
         return ResponseEntity.ok(response);
     }
 
