@@ -8,6 +8,10 @@ import com.example.isp.model.Region;
 import com.example.isp.service.CloudinaryService;
 import com.example.isp.service.ProductService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
@@ -88,11 +92,35 @@ public class ProductController {
     // ==== Delete ====
     @DeleteMapping("/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void delete(@PathVariable Long id) { productService.delete(id); }
+    public void delete(@PathVariable Long id) {
+        productService.delete(id);
+    }
 
     // ==== Search theo tên duy nhất ====
     @GetMapping("/search")
     public List<ProductResponse> search(@RequestParam String q) {
         return productService.searchByName(q).stream().map(ProductMapper::toResponse).toList();
+    }
+
+    // ==== BỘ LỌC vùng–loại–giá (TỰ ĐẶT MẶC ĐỊNH TRONG CODE) ====
+    // Gọi đơn giản: /api/products/filter?regionId=1&categoryId=3&minPrice=0&maxPrice=10000000
+    @GetMapping("/filter")
+    public Page<ProductResponse> filter(
+            @RequestParam(required = false) Long regionId,
+            @RequestParam(required = false) Long categoryId,
+            @RequestParam(required = false) BigDecimal minPrice,
+            @RequestParam(required = false) BigDecimal maxPrice
+    ) {
+        // ===== Thiết lập mặc định ngay trong code =====
+        final int defaultPage = 0;             // luôn bắt đầu từ trang đầu
+        final int defaultSize = 12;            // 12 sản phẩm mỗi trang
+        final String defaultSortField = "productId";  // sắp xếp theo ID
+        final Sort.Direction defaultSortDir = Sort.Direction.DESC; // mới nhất lên trước
+
+        Pageable pageable = PageRequest.of(defaultPage, defaultSize, Sort.by(defaultSortDir, defaultSortField));
+
+        return productService
+                .filter(regionId, categoryId, minPrice, maxPrice, pageable)
+                .map(ProductMapper::toResponse);
     }
 }
