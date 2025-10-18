@@ -17,6 +17,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.Objects;
 import java.util.Optional;
@@ -47,7 +48,11 @@ public class CustomerServiceImpl implements CustomerService {
                 accountRepository.save(acc);
 
                 // Gửi lại email xác thực
-                emailUtil.sendVerificationEmail(acc.getEmail(), otp);
+                try {
+                    emailUtil.sendVerificationEmail(acc.getEmail(), otp);
+                } catch (IOException e) {
+                    throw new RuntimeException("Không thể gửi email xác thực. Vui lòng thử lại sau.");
+                }
 
                 throw new RuntimeException("Email đã được đăng ký nhưng chưa xác thực. Hệ thống đã gửi lại mã OTP mới qua email của bạn.");
             }
@@ -57,7 +62,7 @@ public class CustomerServiceImpl implements CustomerService {
         }
 
         // Kiểm tra trùng username
-        if(accountRepository.existsByUsername(request.getUsername())) {
+        if (accountRepository.existsByUsername(request.getUsername())) {
             throw new RuntimeException("Username already exists");
         }
 
@@ -76,19 +81,24 @@ public class CustomerServiceImpl implements CustomerService {
         account.setOtpCode(otp);
         account.setOtpExpiredAt(LocalDateTime.now().plusMinutes(5));
 
-        // 3. Tạo customer từ request và gắn vô Acccount
+        // 3. Tạo customer từ request và gắn vô Account
         Customer customer = customerMapper.toEntity(request);
         customer.setAccount(account);
 
         // 4. Lưu database
         Customer saved = customerRepository.save(customer);
 
-        // Gửi email xác thực
-        emailUtil.sendVerificationEmail(account.getEmail(), otp);
+        // Gửi email xác thực (SendGrid)
+        try {
+            emailUtil.sendVerificationEmail(account.getEmail(), otp);
+        } catch (IOException e) {
+            throw new RuntimeException("Không thể gửi email xác thực. Vui lòng thử lại sau.");
+        }
 
         // 5. Trả về response
         return customerMapper.toResponse(saved);
     }
+
 
     //Verify email
     @Override
