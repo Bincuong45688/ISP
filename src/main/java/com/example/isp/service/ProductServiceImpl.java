@@ -2,10 +2,12 @@ package com.example.isp.service;
 
 import com.example.isp.model.Product;
 import com.example.isp.repository.ProductRepository;
-import jakarta.persistence.EntityNotFoundException;
+import com.example.isp.service.ProductService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
 import java.util.List;
 
 @Service
@@ -13,57 +15,48 @@ import java.util.List;
 @Transactional
 public class ProductServiceImpl implements ProductService {
 
-    private final ProductRepository productRepository;
-
-    @Override
-    public Product create(Product p) {
-        return productRepository.save(p);
-    }
-
-    @Override
-    public Product update(Long id, Product u) {
-        Product existing = productRepository.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException("Không tìm thấy sản phẩm: " + id));
-
-        existing.setProductName(u.getProductName());
-        existing.setPrice(u.getPrice());
-        existing.setProductDescription(u.getProductDescription());
-        existing.setProductImage(u.getProductImage());
-        existing.setCategory(u.getCategory());
-        existing.setRegion(u.getRegion());
-
-        return productRepository.save(existing); // đảm bảo ghi lại vào DB
-    }
+    private final ProductRepository productRepo;
 
     @Override
     @Transactional(readOnly = true)
     public List<Product> list() {
-        return productRepository.findAll();
+        return productRepo.findAllWithRelations(Sort.by(Sort.Order.desc("productId")));
     }
 
     @Override
     @Transactional(readOnly = true)
-    public List<Product> byCategory(Long categoryId) {
-        return productRepository.findByCategory_CategoryId(categoryId);
+    public Product get(Long id) {
+        return productRepo.findByIdWithRelations(id).orElseThrow();
     }
 
     @Override
-    @Transactional(readOnly = true)
-    public List<Product> byRegion(Long regionId) {
-        return productRepository.findByRegion_RegionId(regionId);
+    public Product create(Product p) {
+        return productRepo.save(p);
     }
 
     @Override
-    @Transactional(readOnly = true)
-    public List<Product> search(String q) {
-        return productRepository.findByProductNameContainingIgnoreCase(q);
+    public Product update(Long id, Product patch) {
+        Product cur = productRepo.findById(id).orElseThrow();
+        if (patch.getProductName() != null) cur.setProductName(patch.getProductName());
+        if (patch.getPrice() != null) cur.setPrice(patch.getPrice());
+        if (patch.getProductDescription() != null) cur.setProductDescription(patch.getProductDescription());
+        if (patch.getProductImage() != null) cur.setProductImage(patch.getProductImage());
+        if (patch.getCategory() != null) cur.setCategory(patch.getCategory());
+        if (patch.getRegion() != null) cur.setRegion(patch.getRegion());
+        return productRepo.save(cur);
     }
 
     @Override
     public void delete(Long id) {
-        if (!productRepository.existsById(id)) {
-            throw new EntityNotFoundException("Không tìm thấy sản phẩm: " + id);
+        productRepo.deleteById(id);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<Product> searchByName(String keyword) {
+        if (keyword == null || keyword.isBlank()) {
+            return productRepo.findAllWithRelations(Sort.by(Sort.Order.desc("productId")));
         }
-        productRepository.deleteById(id);
+        return productRepo.searchByName(keyword);
     }
 }

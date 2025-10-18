@@ -1,17 +1,32 @@
 package com.example.isp.repository;
 
 import com.example.isp.model.Product;
-import org.springframework.data.jpa.repository.JpaRepository;
-import java.util.List;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.jpa.repository.*;
+import org.springframework.data.repository.query.Param;
+import org.springframework.stereotype.Repository;
 
+import java.util.List;
+import java.util.Optional;
+
+@Repository
 public interface ProductRepository extends JpaRepository<Product, Long> {
 
-    // Lấy tất cả sản phẩm theo Category ID
-    List<Product> findByCategory_CategoryId(Long categoryId);
+    // List tất cả + kèm category & region (tránh LazyInitializationException khi map)
+    @EntityGraph(attributePaths = {"category", "region"})
+    @Query("select p from Product p")
+    List<Product> findAllWithRelations(Sort sort);
 
-    // Lấy tất cả sản phẩm theo Region ID
-    List<Product> findByRegion_RegionId(Long regionId);
+    // Lấy 1 sản phẩm + kèm category & region
+    @EntityGraph(attributePaths = {"category", "region"})
+    @Query("select p from Product p where p.productId = :id")
+    Optional<Product> findByIdWithRelations(@Param("id") Long id);
 
-    // Tìm sản phẩm theo tên (không phân biệt hoa/thường)
-    List<Product> findByProductNameContainingIgnoreCase(String q);
+    // Search theo tên + kèm category & region
+    @EntityGraph(attributePaths = {"category", "region"})
+    @Query("""
+        select p from Product p
+        where lower(p.productName) like lower(concat('%', :keyword, '%'))
+        """)
+    List<Product> searchByName(@Param("keyword") String keyword);
 }
