@@ -1,7 +1,10 @@
 package com.example.isp.model.enums;
 
+import com.example.isp.model.Region;
 import jakarta.persistence.*;
 import lombok.*;
+
+import java.time.LocalDate;
 
 @Entity
 @Table(name = "rituals")
@@ -19,13 +22,25 @@ public class Ritual {
     @Column(nullable = false, unique = true)
     private String ritualName;
 
-
     @Column(length = 255)
     private String description;
 
-    @Column(nullable = false)
-    private String region; // Miền Bắc / Miền Trung / Miền Nam/
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "region_id", nullable = false)
+    private Region region;
+
+    @Column(name = "date_lunar")
+    private String dateLunar;   // ngày âm lịch (text)
+
+    @Column(name = "date_solar")
+    private LocalDate dateSolar;  // ngày dương lịch (DATE)
+
+    @Column(name = "meaning", columnDefinition = "TEXT")
+    private String meaning;
 
     @Column(nullable = false)
     private boolean active = true;
+
+    @Column(name = "image_url")
+    private String imageUrl;
 }

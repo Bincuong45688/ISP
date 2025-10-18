@@ -8,4 +8,5 @@ public class RitualCreateDTO {
     private String description;
     private String region;
     private boolean active;
+    private String imageUrl;
 }

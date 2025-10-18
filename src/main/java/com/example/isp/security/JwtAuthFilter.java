@@ -14,6 +14,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
+import java.util.Set;
 
 @Component
 @RequiredArgsConstructor
@@ -22,6 +23,14 @@ public class JwtAuthFilter extends OncePerRequestFilter {
     private final JwtService jwtService;
     private final UserDetailsService userDetailsService;
 
+    private static final Set<String> PUBLIC_ENDPOINTS = Set.of(
+            "/api/customer/login",
+            "/api/customer/register",
+            "/api/staff/login",
+            "/api/staff/register",
+            "/swagger-ui.html"
+    );
+
     @Override
     protected void doFilterInternal(HttpServletRequest request,
                                     HttpServletResponse response,
@@ -29,40 +38,48 @@ public class JwtAuthFilter extends OncePerRequestFilter {
 
         String path = request.getRequestURI();
 
-        // ===== BYPASS các endpoint public =====
-        if (path.startsWith("/api/customer/login")
-                || path.startsWith("/api/customer/register")
-                || path.startsWith("/api/staff/login")
-                || path.startsWith("/api/staff/register")
-                || path.startsWith("/v3/api-docs")
-                || path.startsWith("/swagger-ui")) {
+        // ✅ Cho qua preflight request
+        if ("OPTIONS".equalsIgnoreCase(request.getMethod())) {
+            response.setStatus(HttpServletResponse.SC_OK);
             filterChain.doFilter(request, response);
             return;
         }
 
+        // ✅ Bypass public endpoints
+        if (isPublicEndpoint(path)) {
+            filterChain.doFilter(request, response);
+            return;
+        }
 
-        // ===== Thiếu Authorization hoặc không phải Bearer => CHO QUA để Security quyết định =====
+        // ✅ Kiểm tra token
         String authHeader = request.getHeader("Authorization");
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
             filterChain.doFilter(request, response);
             return;
         }
 
-        String jwt = authHeader.substring(7);
-        String username = jwtService.extractUsername(jwt);
+        String token = authHeader.substring(7);
+        String username = jwtService.extractUsername(token);
 
-        // Set Authentication nếu token hợp lệ
         if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
             UserDetails userDetails = userDetailsService.loadUserByUsername(username);
-            if (jwtService.isTokenValid(jwt, userDetails)) {
+
+            if (jwtService.isTokenValid(token, userDetails)) {
                 UsernamePasswordAuthenticationToken authToken =
                         new UsernamePasswordAuthenticationToken(
-                                userDetails, null, userDetails.getAuthorities());
+                                userDetails, null, userDetails.getAuthorities()
+                        );
                 authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
                 SecurityContextHolder.getContext().setAuthentication(authToken);
             }
         }
 
         filterChain.doFilter(request, response);
+    }
+
+    private boolean isPublicEndpoint(String path) {
+        return PUBLIC_ENDPOINTS.contains(path)
+                || path.startsWith("/v3/api-docs")
+                || path.startsWith("/swagger-ui");
     }
 }

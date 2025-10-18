@@ -16,6 +16,12 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.web.cors.CorsConfigurationSource;
+import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+
+import java.util.List;
+
 @EnableMethodSecurity
 @Configuration
 @RequiredArgsConstructor
@@ -35,22 +41,25 @@ public class SecurityConfig {
                 .csrf(AbstractHttpConfigurer::disable)
                 .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
-                        // ===== Public auth endpoints =====
+                        // Cho phép preflight
+                        .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+
+                        // Public endpoints
                         .requestMatchers(HttpMethod.POST,
                                 "/api/customer/login", "/api/customer/register",
                                 "/api/staff/login", "/api/staff/register"
                         ).permitAll()
 
-                        // ===== Swagger =====
+                        // Swagger
                         .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
 
-                        // ===== Read APIs =====
+                        // Read APIs
                         .requestMatchers(HttpMethod.GET, "/api/categories/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/products/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/regions/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/product-details/**").authenticated()
 
-                        // ===== Write APIs: dùng ROLE_STAFF  =====
+                        // Write APIs: chỉ STAFF
                         .requestMatchers(HttpMethod.POST,
                                 "/api/categories/**", "/api/products/**", "/api/product-details/**", "/api/regions/**")
                         .hasRole("STAFF")
@@ -61,6 +70,7 @@ public class SecurityConfig {
                                 "/api/categories/**", "/api/products/**", "/api/product-details/**", "/api/regions/**")
                         .hasRole("STAFF")
 
+                        // Các API còn lại bắt buộc có token
                         .anyRequest().authenticated()
                 )
                 .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class)
@@ -69,6 +79,18 @@ public class SecurityConfig {
         return http.build();
     }
 
+    @Bean
+    public CorsConfigurationSource corsConfigurationSource() {
+        CorsConfiguration config = new CorsConfiguration();
+        config.setAllowedOriginPatterns(List.of("*"));
+        config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+        config.setAllowedHeaders(List.of("*"));
+        config.setAllowCredentials(true);
+
+        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+        source.registerCorsConfiguration("/**", config);
+        return source;
+    }
 
     @Bean
     public AuthenticationManager authenticationManager(AuthenticationConfiguration config) throws Exception {

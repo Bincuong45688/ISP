@@ -9,5 +9,5 @@ import java.util.List;
 
 @Repository
 public interface RitualRepository extends JpaRepository<Ritual, Long> {
-    List<Ritual> findByRegionIgnoreCase(String region);
+    List<Ritual> findByRegion_RegionNameIgnoreCase(String regionName);
 }

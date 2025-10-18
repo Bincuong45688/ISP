@@ -32,10 +32,12 @@ public class StaffServiceImpl implements StaffService {
 
     @Override
     public AuthResponse register(RegisterStaffRequest req) {
+        // ✅ Kiểm tra username đã tồn tại
         accountRepo.findByUsername(req.getUsername()).ifPresent(a -> {
             throw new IllegalArgumentException("Username existed");
         });
 
+        // ✅ Tạo tài khoản mới
         Account acc = Account.builder()
                 .username(req.getUsername())
                 .email(req.getEmail())
@@ -45,19 +47,14 @@ public class StaffServiceImpl implements StaffService {
                 .build();
         accountRepo.save(acc);
 
+        // ✅ Tạo Staff gắn với Account
         Staff staff = staffMapper.toEntity(req);
         staff.setAccount(acc);
         staffRepo.save(staff);
 
-        UserDetails principal = User.builder()
-                .username(acc.getUsername())
-                .password(acc.getPassword())
-                .roles(acc.getRole().name())   // dùng .roles => tự thêm ROLE_
-                .build();
-
-        String token = jwtService.generateToken(principal);
+        // ❌ Không sinh token tại đây
         return AuthResponse.builder()
-                .token(token)
+                .message("Register successfully. Please login to continue.")
                 .build();
     }
 
@@ -82,6 +79,9 @@ public class StaffServiceImpl implements StaffService {
         String token = jwtService.generateToken(principal);
         return AuthResponse.builder()
                 .token(token)
+                .username(acc.getUsername())
+                .email(acc.getEmail())
+                .role(acc.getRole().name())
                 .build();
     }
 

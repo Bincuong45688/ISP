@@ -12,4 +12,5 @@ public interface RitualService {
     Ritual createRitual(Ritual ritual);
     Ritual updateRitual(Long id, Ritual ritual);
     void deleteRitual(Long id);
+    Ritual updateRitualImage(Long id, String imageUrl);
 }
