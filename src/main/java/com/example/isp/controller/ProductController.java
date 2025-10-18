@@ -1,17 +1,19 @@
 package com.example.isp.controller;
 
-import com.example.isp.dto.request.CreateProductRequest;
 import com.example.isp.dto.response.ProductResponse;
-import com.example.isp.dto.request.UpdateProductRequest;
+import com.example.isp.mapper.ProductMapper;
 import com.example.isp.model.Category;
 import com.example.isp.model.Product;
 import com.example.isp.model.Region;
+import com.example.isp.service.CloudinaryService;
 import com.example.isp.service.ProductService;
-import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 @RestController
@@ -20,79 +22,77 @@ import java.util.List;
 public class ProductController {
 
     private final ProductService productService;
+    private final CloudinaryService cloudinaryService;
 
-    @PostMapping
-    @ResponseStatus(HttpStatus.CREATED)
-    public ProductResponse create(@Valid @RequestBody CreateProductRequest req) {
-        Product p = new Product();
-        p.setProductName(req.getProductName());
-        p.setPrice(req.getPrice());
-        p.setProductDescription(req.getProductDescription());
-        p.setProductImage(req.getProductImage());
-        p.setCategory(Category.builder().categoryId(req.getCategoryId()).build());
-        p.setRegion(Region.builder().regionId(req.getRegionId()).build());
-
-        Product saved = productService.create(p);
-        return toProductResponse(saved);
-    }
-
-    @PutMapping("/{id}")
-    public ProductResponse update(@PathVariable Long id, @RequestBody UpdateProductRequest req) {
-        Product u = new Product();
-        u.setProductName(req.getProductName());
-        u.setPrice(req.getPrice());
-        u.setProductDescription(req.getProductDescription());
-        u.setProductImage(req.getProductImage());
-        if (req.getCategoryId() != null) {
-            u.setCategory(Category.builder().categoryId(req.getCategoryId()).build());
-        }
-        if (req.getRegionId() != null) {
-            u.setRegion(Region.builder().regionId(req.getRegionId()).build());
-        }
-
-        Product saved = productService.update(id, u);
-        return toProductResponse(saved);
-    }
-
+    // ==== List ====
     @GetMapping
     public List<ProductResponse> list() {
-        return productService.list().stream().map(this::toProductResponse).toList();
+        return productService.list().stream().map(ProductMapper::toResponse).toList();
     }
 
-    @GetMapping("/by-category/{categoryId}")
-    public List<ProductResponse> byCategory(@PathVariable Long categoryId) {
-        return productService.byCategory(categoryId).stream().map(this::toProductResponse).toList();
+    // ==== Get by id ====
+    @GetMapping("/{id}")
+    public ProductResponse get(@PathVariable Long id) {
+        return ProductMapper.toResponse(productService.get(id));
     }
 
-    @GetMapping("/by-region/{regionId}")
-    public List<ProductResponse> byRegion(@PathVariable Long regionId) {
-        return productService.byRegion(regionId).stream().map(this::toProductResponse).toList();
+    // ==== Create (multipart/form-data) ====
+    @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @ResponseStatus(HttpStatus.CREATED)
+    public ProductResponse create(
+            @RequestParam String productName,
+            @RequestParam BigDecimal price,
+            @RequestParam(required = false) String productDescription,
+            @RequestParam Long categoryId,
+            @RequestParam Long regionId,
+            @RequestParam("file") MultipartFile file
+    ) {
+        String imageUrl = cloudinaryService.uploadImage(file, "isp/products");
+        Product p = Product.builder()
+                .productName(productName)
+                .price(price)
+                .productDescription(productDescription)
+                .productImage(imageUrl)
+                .category(Category.builder().categoryId(categoryId).build())
+                .region(Region.builder().regionId(regionId).build())
+                .build();
+        return ProductMapper.toResponse(productService.create(p));
     }
 
-    // (tuỳ chọn) Tìm kiếm theo tên sản phẩm
-    @GetMapping("/search")
-    public List<ProductResponse> search(@RequestParam("q") String q) {
-        return productService.search(q).stream().map(this::toProductResponse).toList();
+    // ==== Update (multipart/form-data) ====
+    @PutMapping(path = "/{id}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ProductResponse update(
+            @PathVariable Long id,
+            @RequestParam(required = false) String productName,
+            @RequestParam(required = false) BigDecimal price,
+            @RequestParam(required = false) String productDescription,
+            @RequestParam(required = false) Long categoryId,
+            @RequestParam(required = false) Long regionId,
+            @RequestParam(value = "file", required = false) MultipartFile file
+    ) {
+        Product patch = Product.builder()
+                .productName(productName)
+                .price(price)
+                .productDescription(productDescription)
+                .category(categoryId != null ? Category.builder().categoryId(categoryId).build() : null)
+                .region(regionId != null ? Region.builder().regionId(regionId).build() : null)
+                .build();
+
+        if (file != null && !file.isEmpty()) {
+            String newUrl = cloudinaryService.uploadImage(file, "isp/products");
+            patch.setProductImage(newUrl);
+        }
+        return ProductMapper.toResponse(productService.update(id, patch));
     }
 
-    // (tuỳ chọn) Xoá sản phẩm
+    // ==== Delete ====
     @DeleteMapping("/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void delete(@PathVariable Long id) {
-        productService.delete(id);
-    }
+    public void delete(@PathVariable Long id) { productService.delete(id); }
 
-    private ProductResponse toProductResponse(Product s) {
-        return ProductResponse.builder()
-                .productId(s.getProductId())
-                .productName(s.getProductName())
-                .price(s.getPrice())
-                .productDescription(s.getProductDescription())
-                .productImage(s.getProductImage())
-                .categoryId(s.getCategory() != null ? s.getCategory().getCategoryId() : null)
-                .categoryName(s.getCategory() != null ? s.getCategory().getCategoryName() : null)
-                .regionId(s.getRegion() != null ? s.getRegion().getRegionId() : null)
-                .regionName(s.getRegion() != null ? s.getRegion().getRegionName() : null)
-                .build();
+    // ==== Search theo tên duy nhất ====
+    @GetMapping("/search")
+    public List<ProductResponse> search(@RequestParam String q) {
+        return productService.searchByName(q).stream().map(ProductMapper::toResponse).toList();
     }
 }

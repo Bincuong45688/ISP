@@ -1,25 +1,19 @@
 package com.example.isp.dto.request;
 
-import jakarta.validation.constraints.*;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.*;
+import org.springframework.web.multipart.MultipartFile;
+
 import java.math.BigDecimal;
 
 @Getter @Setter @NoArgsConstructor @AllArgsConstructor @Builder
-public class CreateProductRequest {
-
-    @NotBlank
+public class UpdateProductForm {
     private String productName;
-
-    @NotNull @DecimalMin("0.0")
     private BigDecimal price;
-
     private String productDescription;
-
-    private String productImage; // có thể là URL hoặc upload sau
-
-    @NotNull
     private Long categoryId;
-
-    @NotNull
     private Long regionId;
+
+    @Schema(type = "string", format = "binary", description = "Ảnh mới (tùy chọn)")
+    private MultipartFile file; // có thể null
 }
