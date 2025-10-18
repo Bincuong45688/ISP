@@ -3,10 +3,15 @@ package com.example.isp.mapper;
 import com.example.isp.dto.response.ProductResponse;
 import com.example.isp.model.Product;
 
+import java.util.List;
+import java.util.stream.Collectors;
+
 public final class ProductMapper {
     private ProductMapper() {}
 
     public static ProductResponse toResponse(Product p) {
+        if (p == null) return null;
+
         var c = p.getCategory();
         var r = p.getRegion();
         Long categoryId = (c != null) ? c.getCategoryId() : null;
@@ -23,5 +28,12 @@ public final class ProductMapper {
                 categoryId, categoryName,
                 regionId, regionName
         );
+    }
+
+    // === Thêm mới: tiện ích chuyển danh sách ===
+    public static List<ProductResponse> toResponseList(List<Product> products) {
+        return products.stream()
+                .map(ProductMapper::toResponse)
+                .collect(Collectors.toList());
     }
 }
