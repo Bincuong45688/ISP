@@ -1,12 +1,17 @@
 package com.example.isp.repository;
 
 import com.example.isp.model.Cart;
-import com.example.isp.model.Customer;
+import com.example.isp.model.enums.CartStatus;
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
+
 import java.util.Optional;
 
 public interface CartRepository extends JpaRepository<Cart, Long> {
 
-    // Tìm giỏ hàng của 1 khách theo trạng thái (ví dụ ACTIVE, CHECKED_OUT, ...)
-    Optional<Cart> findByCustomerAndCartStatus(Customer customer, String cartStatus);
+    @EntityGraph(attributePaths = "customer")
+    Optional<Cart> findWithCustomerByCustomer_CustomerIdAndCartStatus(Long customerId, CartStatus status);
+
+    // (nếu có method cũ trả theo Customer object, cũng đổi tham số status sang CartStatus)
+    // Optional<Cart> findByCustomerAndCartStatus(Customer customer, CartStatus status);
 }
