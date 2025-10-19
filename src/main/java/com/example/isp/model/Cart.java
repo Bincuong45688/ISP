@@ -1,5 +1,6 @@
 package com.example.isp.model;
 
+import com.example.isp.model.enums.CartStatus;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -18,6 +19,6 @@ public class Cart {
     @JoinColumn(name = "customer_id", nullable = false)
     private Customer customer;
 
-    @Column(name = "cart_status", length = 50)
-    private String cartStatus;
+    @Enumerated(EnumType.STRING)
+    private CartStatus cartStatus;
 }

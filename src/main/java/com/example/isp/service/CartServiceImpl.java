@@ -1,6 +1,7 @@
 package com.example.isp.service;
 
 import com.example.isp.model.*;
+import com.example.isp.model.enums.CartStatus;
 import com.example.isp.repository.*;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
@@ -19,17 +20,23 @@ public class CartServiceImpl implements CartService {
     private final CustomerRepository customerRepository;
 
     @Override
+    @Transactional(readOnly = true)
     public Cart getOpenCart(Long customerId) {
+        return cartRepository
+                .findWithCustomerByCustomer_CustomerIdAndCartStatus(customerId, CartStatus.OPEN)
+                .orElseGet(() -> createEmptyOpenCart(customerId));
+    }
+
+    @Transactional
+    protected Cart createEmptyOpenCart(Long customerId) {
         Customer customer = customerRepository.findById(customerId)
                 .orElseThrow(() -> new EntityNotFoundException("Customer not found: " + customerId));
 
-        return cartRepository.findByCustomerAndCartStatus(customer, "OPEN")
-                .orElseGet(() -> cartRepository.save(
-                        Cart.builder()
-                                .customer(customer)
-                                .cartStatus("OPEN")
-                                .build()
-                ));
+        Cart newCart = Cart.builder()
+                .customer(customer)
+                .cartStatus(CartStatus.OPEN)   // dùng ENUM
+                .build();
+        return cartRepository.save(newCart);
     }
 
     @Override
@@ -37,7 +44,6 @@ public class CartServiceImpl implements CartService {
         if (quantity == null || quantity <= 0) {
             throw new IllegalArgumentException("Quantity must be > 0");
         }
-
         Cart cart = getOpenCart(customerId);
 
         CartItem item = cartItemRepository
@@ -46,7 +52,7 @@ public class CartServiceImpl implements CartService {
                     CartItem ci = new CartItem();
                     ci.setCart(cart);
                     Product p = new Product();
-                    p.setProductId(productId); // chỉ set FK, không load toàn bộ entity
+                    p.setProductId(productId); // set FK
                     ci.setProduct(p);
                     ci.setQuantity(0);
                     ci.setSelected(true);
@@ -63,7 +69,6 @@ public class CartServiceImpl implements CartService {
         if (quantity == null || quantity <= 0) {
             throw new IllegalArgumentException("Quantity must be > 0");
         }
-
         Cart cart = getOpenCart(customerId);
 
         CartItem item = cartItemRepository
@@ -91,12 +96,10 @@ public class CartServiceImpl implements CartService {
     public Cart checkout(Long customerId) {
         Cart cart = getOpenCart(customerId);
         List<CartItem> items = cartItemRepository.findByCart_CartId(cart.getCartId());
-
         if (items.isEmpty()) {
             throw new IllegalStateException("Cart is empty");
         }
-
-        cart.setCartStatus("CHECKED_OUT");
+        cart.setCartStatus(CartStatus.CHECKED_OUT);  // dùng ENUM
         return cartRepository.save(cart);
     }
 }
