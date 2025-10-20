@@ -56,6 +56,9 @@ public class SecurityConfig {
                         .requestMatchers("/api/staff/**").hasAnyAuthority("ROLE_STAFF", "STAFF")
                                        
 
+                                // Staff protected routes
+                                .requestMatchers("/api/staff/**").hasAnyAuthority("ROLE_STAFF", "STAFF")
+
                         // Read public
                         .requestMatchers(HttpMethod.GET, "/api/categories/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/products/**").permitAll()
