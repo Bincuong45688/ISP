@@ -16,6 +16,7 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+
 @EnableMethodSecurity
 @Configuration
 @RequiredArgsConstructor
@@ -50,6 +51,9 @@ public class SecurityConfig {
                                 "/api/customer/reset-password",
                                 "/api/staff/login", "/api/staff/register"
                         ).permitAll()
+
+                                // Staff protected routes
+                                .requestMatchers("/api/staff/**").hasAnyAuthority("ROLE_STAFF", "STAFF")
 
                         // Read public
                         .requestMatchers(HttpMethod.GET, "/api/categories/**").permitAll()

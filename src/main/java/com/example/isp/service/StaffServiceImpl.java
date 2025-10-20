@@ -82,6 +82,7 @@ public class StaffServiceImpl implements StaffService {
         String token = jwtService.generateToken(principal);
         return AuthResponse.builder()
                 .token(token)
+                .role(acc.getRole().name())
                 .build();
     }
 
