@@ -7,6 +7,6 @@ import lombok.Setter;
 @Setter
 public class UpdateCategoryRequest {
 
-    private String categoryName;   // Tên danh mục mới (nếu có thay đổi)
-    private String description;    // Mô tả mới (có thể null nếu không chỉnh)
+    private String categoryName;
+    private String description;
 }

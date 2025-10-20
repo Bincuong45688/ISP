@@ -9,11 +9,11 @@ import java.util.Optional;
 
 public interface CartItemRepository extends JpaRepository<CartItem, Long> {
 
-    // Lấy toàn bộ item theo Cart ID + fetch product để không bị LazyInitialization
+    // Lấy toàn bộ item theo Cart ID + fetch product
     @EntityGraph(attributePaths = "product")
     List<CartItem> findByCart_CartId(Long cartId);
 
-    // Kiểm tra 1 sản phẩm cụ thể có nằm trong giỏ hàng hay không + fetch product (hữu ích nếu bạn đọc field product ngay sau đó)
+    // Kiểm tra 1 sản phẩm cụ thể có nằm trong giỏ hàng hay không
     @EntityGraph(attributePaths = "product")
     Optional<CartItem> findByCart_CartIdAndProduct_ProductId(Long cartId, Long productId);
 

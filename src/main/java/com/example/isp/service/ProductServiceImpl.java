@@ -63,7 +63,7 @@ public class ProductServiceImpl implements ProductService {
         return productRepo.searchByName(keyword);
     }
 
-    // ===== Thêm mới: Bộ lọc động vùng–loại–giá (có phân trang & sort) =====
+
     @Override
     @Transactional(readOnly = true)
     public Page<Product> filter(Long regionId,
@@ -72,14 +72,14 @@ public class ProductServiceImpl implements ProductService {
                                 BigDecimal maxPrice,
                                 Pageable pageable) {
 
-        // Chuẩn hoá khoảng giá mà KHÔNG gán lại tham số
+
         BigDecimal min = minPrice;
         BigDecimal max = maxPrice;
         if (min != null && max != null && min.compareTo(max) > 0) {
             BigDecimal t = min; min = max; max = t;
         }
 
-        // Tạo biến final để dùng trong lambda Specification
+
         final BigDecimal minP = min;
         final BigDecimal maxP = max;
         final Long regionIdF = regionId;

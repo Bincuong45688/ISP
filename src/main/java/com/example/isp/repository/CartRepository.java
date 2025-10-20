@@ -12,6 +12,4 @@ public interface CartRepository extends JpaRepository<Cart, Long> {
     @EntityGraph(attributePaths = "customer")
     Optional<Cart> findWithCustomerByCustomer_CustomerIdAndCartStatus(Long customerId, CartStatus status);
 
-    // (nếu có method cũ trả theo Customer object, cũng đổi tham số status sang CartStatus)
-    // Optional<Cart> findByCustomerAndCartStatus(Customer customer, CartStatus status);
 }
