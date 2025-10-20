@@ -51,6 +51,10 @@ public class SecurityConfig {
                                 "/api/customer/reset-password",
                                 "/api/staff/login", "/api/staff/register"
                         ).permitAll()
+                                       
+                        // Staff protected routes
+                        .requestMatchers("/api/staff/**").hasAnyAuthority("ROLE_STAFF", "STAFF")
+                                       
 
                         // Read public
                         .requestMatchers(HttpMethod.GET, "/api/categories/**").permitAll()
