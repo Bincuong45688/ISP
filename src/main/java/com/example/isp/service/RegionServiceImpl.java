@@ -28,7 +28,7 @@ public class RegionServiceImpl implements RegionService {
         existing.setRegionName(u.getRegionName());
         existing.setRegionDescription(u.getRegionDescription());
 
-        // Bảo đảm thay đổi được lưu vào DB
+
         return regionRepository.save(existing);
     }
 

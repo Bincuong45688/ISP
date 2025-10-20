@@ -21,9 +21,6 @@ public interface ProductRepository extends JpaRepository<Product, Long>, JpaSpec
     @EntityGraph(attributePaths = {"category", "region"})
     Page<Product> findAll(Specification<Product> spec, Pageable pageable);
 
-    // === Code cũ của bạn (giữ nguyên) ===
-
-    // List tất cả + kèm category & region (tránh LazyInitializationException khi map)
     @EntityGraph(attributePaths = {"category", "region"})
     @Query("select p from Product p")
     List<Product> findAllWithRelations(Sort sort);

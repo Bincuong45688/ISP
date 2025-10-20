@@ -9,8 +9,8 @@ import lombok.*;
 @Builder
 public class CartItemResponse {
 
-    private Long productId;       // ID sản phẩm
-    private String productName;   // Tên sản phẩm
-    private Integer quantity;     // Số lượng trong giỏ
+    private Long productId;
+    private String productName;
+    private Integer quantity;     
     private Boolean selected;     // Trạng thái được chọn (true/false)
 }
