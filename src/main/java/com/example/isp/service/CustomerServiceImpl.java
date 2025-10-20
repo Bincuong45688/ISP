@@ -125,6 +125,64 @@ public class CustomerServiceImpl implements CustomerService {
                 .build();
     }
 
+
+    @Override
+    public VerifyEmailResponse sendResetOtp(String email) {
+        Account account = accountRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy tài khoản với email này."));
+
+        String otp = emailUtil.generateOtp();
+        account.setOtpCode(otp);
+        account.setOtpExpiredAt(LocalDateTime.now().plusMinutes(5));
+        accountRepository.save(account);
+
+        try {
+            emailUtil.sendVerificationEmail(email, otp);
+            return new VerifyEmailResponse("OTP đặt lại mật khẩu đã được gửi đến email của bạn.", "success");
+        } catch (IOException e) {
+            return new VerifyEmailResponse("Không thể gửi OTP. Vui lòng thử lại sau.", "error");
+        }
+    }
+
+
+    @Override
+    public VerifyEmailResponse verifyResetOtp(VerifyEmailRequest request) {
+        Account account = accountRepository.findByEmail(request.getEmail())
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy tài khoản."));
+
+        if (account.getOtpCode() == null ||
+                !account.getOtpCode().equals(request.getOtp())) {
+            return new VerifyEmailResponse("Mã OTP không đúng.", "error");
+        }
+
+        if (account.getOtpExpiredAt() == null ||
+                account.getOtpExpiredAt().isBefore(LocalDateTime.now())) {
+            return new VerifyEmailResponse("Mã OTP đã hết hạn.", "error");
+        }
+
+        // Đánh dấu trạng thái verified (nếu cần bạn có thể thêm cột otpVerified = true)
+        return new VerifyEmailResponse("OTP hợp lệ. Bạn có thể đặt lại mật khẩu.", "success");
+    }
+
+    @Override
+    public VerifyEmailResponse resetPassword(String email, String newPassword) {
+        Account account = accountRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy tài khoản."));
+
+        if (account.getOtpExpiredAt() == null ||
+                account.getOtpExpiredAt().isBefore(LocalDateTime.now())) {
+            return new VerifyEmailResponse("OTP đã hết hạn hoặc chưa được xác minh.", "error");
+        }
+
+        account.setPassword(passwordEncoder.encode(newPassword));
+        account.setOtpCode(null); // Xoá OTP sau khi dùng
+        account.setOtpExpiredAt(null);
+        accountRepository.save(account);
+
+        return new VerifyEmailResponse("Đặt lại mật khẩu thành công.", "success");
+    }
+
+
     //Login
     @Override
     public AuthResponse login(LoginRequest request) {

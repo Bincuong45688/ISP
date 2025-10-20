@@ -14,4 +14,8 @@ public interface CustomerService {
     CustomerResponse getProfileByUsername(String username);
     CustomerResponse updateProfile(String username, UpdateProfileRequest request);
     VerifyEmailResponse verifyEmail(VerifyEmailRequest request);
+    VerifyEmailResponse sendResetOtp(String email);
+    VerifyEmailResponse verifyResetOtp(VerifyEmailRequest request);
+    VerifyEmailResponse resetPassword(String email, String newPassword);
+
 }

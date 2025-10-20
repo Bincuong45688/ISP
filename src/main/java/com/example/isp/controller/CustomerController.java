@@ -34,6 +34,24 @@ public class CustomerController {
         return ResponseEntity.ok(response);
     }
 
+    @PostMapping("/forgot-password")
+    public ResponseEntity<VerifyEmailResponse> forgotPassword(@RequestParam String email) {
+        VerifyEmailResponse response = customerService.sendResetOtp(email);
+        return ResponseEntity.ok(response);
+    }
+
+    @PostMapping("/verify-reset-otp")
+    public ResponseEntity<VerifyEmailResponse> verifyResetOtp(@RequestBody VerifyEmailRequest request) {
+        VerifyEmailResponse response = customerService.verifyResetOtp(request);
+        return ResponseEntity.ok(response);
+    }
+
+    @PostMapping("/reset-password")
+    public ResponseEntity<VerifyEmailResponse> resetPassword(@RequestParam String email, @RequestParam String newPassword) {
+        VerifyEmailResponse response = customerService.resetPassword(email, newPassword);
+        return ResponseEntity.ok(response);
+    }
+
     @PostMapping("/login")
     public ResponseEntity<AuthResponse> login(@RequestBody LoginRequest request) {
         AuthResponse response = customerService.login(request);
