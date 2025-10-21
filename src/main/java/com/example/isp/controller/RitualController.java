@@ -44,35 +44,22 @@ public class RitualController {
         return toResponse(ritualService.get(id));
     }
 
-    // ==== Create (JSON) ====
-    @PostMapping
+    // ==== Create (multipart/form-data với file upload) ====
+    @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @ResponseStatus(HttpStatus.CREATED)
-    public RitualResponse create(@Valid @RequestBody CreateRitualRequest req) {
-        Ritual ritual = Ritual.builder()
-                .ritualName(req.ritualName())
-                .dateLunar(req.dateLunar())
-                .region(Region.builder().regionId(req.regionId()).build())
-                .dateSolar(req.dateSolar())
-                .description(req.description())
-                .meaning(req.meaning())
-                .build();
-
-        return toResponse(ritualService.create(ritual));
-    }
-
-    // ==== Create with Image (multipart/form-data) ====
-    @PostMapping(path = "/with-image", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    @ResponseStatus(HttpStatus.CREATED)
-    public RitualResponse createWithImage(
+    public RitualResponse create(
             @RequestParam String ritualName,
             @RequestParam(required = false) String dateLunar,
             @RequestParam Long regionId,
             @RequestParam(required = false) LocalDate dateSolar,
             @RequestParam(required = false) String description,
             @RequestParam(required = false) String meaning,
-            @RequestParam(value = "file") MultipartFile file
+            @RequestParam(value = "file", required = false) MultipartFile file
     ) {
-        String imageUrl = cloudinaryService.uploadImage(file, "isp/rituals");
+        String imageUrl = null;
+        if (file != null && !file.isEmpty()) {
+            imageUrl = cloudinaryService.uploadImage(file, "isp/rituals");
+        }
 
         Ritual ritual = Ritual.builder()
                 .ritualName(ritualName)
@@ -87,34 +74,32 @@ public class RitualController {
         return toResponse(ritualService.create(ritual));
     }
 
-    // ==== Update (JSON) ====
-    @PutMapping("/{id}")
+    // ==== Update (multipart/form-data) ====
+    @PutMapping(path = "/{id}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public RitualResponse update(
             @PathVariable Long id,
-            @Valid @RequestBody UpdateRitualRequest req) {
-        
-        Ritual patch = Ritual.builder()
-                .ritualName(req.ritualName())
-                .dateLunar(req.dateLunar())
-                .region(req.regionId() != null ? Region.builder().regionId(req.regionId()).build() : null)
-                .dateSolar(req.dateSolar())
-                .description(req.description())
-                .meaning(req.meaning())
-                .build();
-
-        return toResponse(ritualService.update(id, patch));
-    }
-
-    // ==== Update Image ====
-    @PutMapping(path = "/{id}/image", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public RitualResponse updateImage(
-            @PathVariable Long id,
-            @RequestParam(value = "file") MultipartFile file
+            @RequestParam(required = false) String ritualName,
+            @RequestParam(required = false) String dateLunar,
+            @RequestParam(required = false) Long regionId,
+            @RequestParam(required = false) LocalDate dateSolar,
+            @RequestParam(required = false) String description,
+            @RequestParam(required = false) String meaning,
+            @RequestParam(value = "file", required = false) MultipartFile file
     ) {
-        String newUrl = cloudinaryService.uploadImage(file, "isp/rituals");
         Ritual patch = Ritual.builder()
-                .imageUrl(newUrl)
+                .ritualName(ritualName)
+                .dateLunar(dateLunar)
+                .region(regionId != null ? Region.builder().regionId(regionId).build() : null)
+                .dateSolar(dateSolar)
+                .description(description)
+                .meaning(meaning)
                 .build();
+
+        if (file != null && !file.isEmpty()) {
+            String newUrl = cloudinaryService.uploadImage(file, "isp/rituals");
+            patch.setImageUrl(newUrl);
+        }
+
         return toResponse(ritualService.update(id, patch));
     }
 
