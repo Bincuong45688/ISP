@@ -4,23 +4,26 @@ import jakarta.persistence.*;
 import lombok.*;
 
 @Entity
-@Table(name = "checklist_items")
-@Getter
-@Setter
-@NoArgsConstructor
-@AllArgsConstructor
-@Builder
+@Table(name = "checklistitems")
+@Getter @Setter @NoArgsConstructor @AllArgsConstructor @Builder
 public class ChecklistItem {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long itemId;
+    @Column(name = "checklist_id")
+    private Long checklistId;
 
-    @Column(nullable = false)
-    private String itemName;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "ritual_id", foreignKey = @ForeignKey(name = "fk_checklistitem_ritual"))
+    private Ritual ritual;
 
-    private String itemDescription;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "item_id", foreignKey = @ForeignKey(name = "fk_checklistitem_item"))
+    private Checklist checklist;
 
-    @Column(nullable = false)
-    private String unit;  // piece, set, kg, g, pack, other
+    @Column(name = "quantity")
+    private Integer quantity;
+
+    @Column(name = "check_note", length = 255)
+    private String checkNote;
 }

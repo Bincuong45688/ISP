@@ -1,6 +1,5 @@
 package com.example.isp.service;
 
-import com.example.isp.model.UserChecklistItem;
 import com.example.isp.repository.UserChecklistItemRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;

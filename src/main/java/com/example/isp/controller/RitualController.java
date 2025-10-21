@@ -1,98 +1,167 @@
 package com.example.isp.controller;
 
-import com.example.isp.config.SecurityRoles;
-import com.example.isp.dto.RitualCreateDTO;
-import com.example.isp.dto.RitualUpdateDTO;
-import com.example.isp.model.enums.Ritual;
+import com.example.isp.dto.request.CreateRitualRequest;
+import com.example.isp.dto.request.UpdateRitualRequest;
+import com.example.isp.dto.response.RitualResponse;
+import com.example.isp.model.Region;
+import com.example.isp.model.Ritual;
+import com.example.isp.service.CloudinaryService;
 import com.example.isp.service.RitualService;
-import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.security.SecurityRequirement;
-import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.time.LocalDate;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/ritual")
+@RequestMapping("/api/rituals")
 @RequiredArgsConstructor
-@Tag(name = "Ritual Management", description = "Quản lý nghi lễ — xem, tạo, sửa, xóa")
 public class RitualController {
 
     private final RitualService ritualService;
+    private final CloudinaryService cloudinaryService;
 
-    // 👤 Public
-    @Operation(
-            summary = "Lấy tất cả nghi lễ (Public)",
-            description = "Trả về danh sách tất cả nghi lễ đang hoạt động. Người dùng không cần đăng nhập."
-    )
+    // ==== List tất cả ====
     @GetMapping
-    public ResponseEntity<List<Ritual>> getAll() {
-        return ResponseEntity.ok(ritualService.getAllRituals());
+    public List<RitualResponse> list() {
+        return ritualService.list()
+                .stream()
+                .map(this::toResponse)
+                .toList();
     }
 
-    @Operation(
-            summary = "Lấy nghi lễ theo ID (Public)",
-            description = "Trả về thông tin chi tiết của một nghi lễ theo ID."
-    )
+    // ==== Get by ID ====
     @GetMapping("/{id}")
-    public ResponseEntity<Ritual> getById(@PathVariable Long id) {
-        return ResponseEntity.ok(ritualService.getRitualById(id));
+    public RitualResponse get(@PathVariable Long id) {
+        return toResponse(ritualService.get(id));
     }
 
-    @Operation(
-            summary = "Lấy nghi lễ theo vùng miền (Public)",
-            description = "Trả về danh sách nghi lễ theo vùng miền. Người dùng không cần đăng nhập."
-    )
-    @GetMapping("/region/{region}")
-    public ResponseEntity<List<Ritual>> getByRegion(@PathVariable String region) {
-        return ResponseEntity.ok(ritualService.getRitualsByRegion(region));
-    }
-
-
-    @Operation(
-            summary = "Tạo nghi lễ mới (STAFF)",
-            description = "Chỉ tài khoản có quyền STAFF mới được phép tạo nghi lễ mới.",
-            security = @SecurityRequirement(name = "bearerAuth")
-    )
-    @PreAuthorize(SecurityRoles.STAFF)
+    // ==== Create (JSON) ====
     @PostMapping
-    public ResponseEntity<Ritual> create(@RequestBody RitualCreateDTO dto) {
-        Ritual ritual = new Ritual();
-        ritual.setRitualName(dto.getRitualName());
-        ritual.setDescription(dto.getDescription());
-        ritual.setRegion(dto.getRegion());
-        ritual.setActive(dto.isActive());
-        return ResponseEntity.ok(ritualService.createRitual(ritual));
+    @ResponseStatus(HttpStatus.CREATED)
+    public RitualResponse create(@Valid @RequestBody CreateRitualRequest req) {
+        Ritual ritual = Ritual.builder()
+                .ritualName(req.ritualName())
+                .dateLunar(req.dateLunar())
+                .region(Region.builder().regionId(req.regionId()).build())
+                .dateSolar(req.dateSolar())
+                .description(req.description())
+                .meaning(req.meaning())
+                .build();
+
+        return toResponse(ritualService.create(ritual));
     }
 
-    @Operation(
-            summary = "Cập nhật nghi lễ (STAFF)",
-            description = "Chỉ tài khoản có quyền STAFF mới được phép chỉnh sửa nghi lễ.",
-            security = @SecurityRequirement(name = "bearerAuth")
-    )
-    @PreAuthorize(SecurityRoles.STAFF)
+    // ==== Create with Image (multipart/form-data) ====
+    @PostMapping(path = "/with-image", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @ResponseStatus(HttpStatus.CREATED)
+    public RitualResponse createWithImage(
+            @RequestParam String ritualName,
+            @RequestParam(required = false) String dateLunar,
+            @RequestParam Long regionId,
+            @RequestParam(required = false) LocalDate dateSolar,
+            @RequestParam(required = false) String description,
+            @RequestParam(required = false) String meaning,
+            @RequestParam(value = "file") MultipartFile file
+    ) {
+        String imageUrl = cloudinaryService.uploadImage(file, "isp/rituals");
+
+        Ritual ritual = Ritual.builder()
+                .ritualName(ritualName)
+                .dateLunar(dateLunar)
+                .region(Region.builder().regionId(regionId).build())
+                .dateSolar(dateSolar)
+                .description(description)
+                .meaning(meaning)
+                .imageUrl(imageUrl)
+                .build();
+
+        return toResponse(ritualService.create(ritual));
+    }
+
+    // ==== Update (JSON) ====
     @PutMapping("/{id}")
-    public ResponseEntity<Ritual> update(@PathVariable Long id, @RequestBody RitualUpdateDTO dto) {
-        Ritual ritual = new Ritual();
-        ritual.setRitualName(dto.getRitualName());
-        ritual.setDescription(dto.getDescription());
-        ritual.setRegion(dto.getRegion());
-        ritual.setActive(dto.isActive());
-        return ResponseEntity.ok(ritualService.updateRitual(id, ritual));
+    public RitualResponse update(
+            @PathVariable Long id,
+            @Valid @RequestBody UpdateRitualRequest req) {
+        
+        Ritual patch = Ritual.builder()
+                .ritualName(req.ritualName())
+                .dateLunar(req.dateLunar())
+                .region(req.regionId() != null ? Region.builder().regionId(req.regionId()).build() : null)
+                .dateSolar(req.dateSolar())
+                .description(req.description())
+                .meaning(req.meaning())
+                .build();
+
+        return toResponse(ritualService.update(id, patch));
     }
 
-    @Operation(
-            summary = "Xóa nghi lễ (STAFF)",
-            description = "Chỉ tài khoản có quyền STAFF mới được phép xóa nghi lễ.",
-            security = @SecurityRequirement(name = "bearerAuth")
-    )
-    @PreAuthorize(SecurityRoles.STAFF)
+    // ==== Update Image ====
+    @PutMapping(path = "/{id}/image", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public RitualResponse updateImage(
+            @PathVariable Long id,
+            @RequestParam(value = "file") MultipartFile file
+    ) {
+        String newUrl = cloudinaryService.uploadImage(file, "isp/rituals");
+        Ritual patch = Ritual.builder()
+                .imageUrl(newUrl)
+                .build();
+        return toResponse(ritualService.update(id, patch));
+    }
+
+    // ==== Delete ====
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> delete(@PathVariable Long id) {
-        ritualService.deleteRitual(id);
-        return ResponseEntity.noContent().build();
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void delete(@PathVariable Long id) {
+        ritualService.delete(id);
+    }
+
+    // ==== Search theo tên ====
+    @GetMapping("/search")
+    public List<RitualResponse> search(@RequestParam String q) {
+        return ritualService.searchByName(q)
+                .stream()
+                .map(this::toResponse)
+                .toList();
+    }
+
+    // ==== Filter theo tên và vùng miền với phân trang ====
+    // Gọi: /api/rituals/filter?name=tết&regionId=1&page=0&size=10&sort=ritualId,desc
+    @GetMapping("/filter")
+    public Page<RitualResponse> filter(
+            @RequestParam(required = false) String name,
+            @RequestParam(required = false) Long regionId,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(defaultValue = "ritualId") String sortBy,
+            @RequestParam(defaultValue = "DESC") Sort.Direction direction
+    ) {
+        Pageable pageable = PageRequest.of(page, size, Sort.by(direction, sortBy));
+        return ritualService.filter(name, regionId, pageable)
+                .map(this::toResponse);
+    }
+
+    // ==== Helper method để convert Entity -> Response ====
+    private RitualResponse toResponse(Ritual r) {
+        return new RitualResponse(
+                r.getRitualId(),
+                r.getRitualName(),
+                r.getDateLunar(),
+                r.getRegion() != null ? r.getRegion().getRegionId() : null,
+                r.getRegion() != null ? r.getRegion().getRegionName() : null,
+                r.getDateSolar(),
+                r.getDescription(),
+                r.getMeaning(),
+                r.getImageUrl()
+        );
     }
 }

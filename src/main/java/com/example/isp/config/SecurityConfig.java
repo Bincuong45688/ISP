@@ -46,35 +46,27 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.POST,
                                 "/api/customer/login", "/api/customer/register",
                                 "/api/customer/verify-email",
-                                "/api/customer/forgot-password",
-                                "/api/customer/verify-reset-otp",
-                                "/api/customer/reset-password",
                                 "/api/staff/login", "/api/staff/register"
                         ).permitAll()
-                                       
-                        // Staff protected routes
-                        .requestMatchers("/api/staff/**").hasAnyAuthority("ROLE_STAFF", "STAFF")
-                                       
-
-                                // Staff protected routes
-                                .requestMatchers("/api/staff/**").hasAnyAuthority("ROLE_STAFF", "STAFF")
 
                         // Read public
                         .requestMatchers(HttpMethod.GET, "/api/categories/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/products/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/regions/**").permitAll()
-                        // Nếu muốn mở product-details cũng public thì đổi dòng dưới thành permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/rituals/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/checklists/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/checklist-items/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/product-details/**").authenticated()
 
                         // Write: STAFF
                         .requestMatchers(HttpMethod.POST,
-                                "/api/categories/**", "/api/products/**", "/api/product-details/**", "/api/regions/**"
+                                "/api/categories/**", "/api/products/**", "/api/product-details/**","/api/checklists/**","/api/checklist-items/**","/api/rituals/**", "/api/regions/**"
                         ).hasAnyAuthority("ROLE_STAFF","STAFF")
                         .requestMatchers(HttpMethod.PUT,
-                                "/api/categories/**", "/api/products/**", "/api/product-details/**", "/api/regions/**"
+                                "/api/categories/**", "/api/products/**", "/api/product-details/**","/api/checklists/**", "/aapi/checklist-items/**","/api/rituals/**","/api/regions/**"
                         ).hasAnyAuthority("ROLE_STAFF","STAFF")
                         .requestMatchers(HttpMethod.DELETE,
-                                "/api/categories/**", "/api/products/**", "/api/product-details/**", "/api/regions/**"
+                                "/api/categories/**", "/api/products/**", "/api/product-details/**","/api/checklists/**","/api/checklist-items/**", "/api/rituals/**","/api/regions/**"
                         ).hasAnyAuthority("ROLE_STAFF","STAFF")
 
                         // Uploads: STAFF

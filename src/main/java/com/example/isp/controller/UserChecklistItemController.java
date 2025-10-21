@@ -1,6 +1,5 @@
 package com.example.isp.controller;
 
-import com.example.isp.model.UserChecklistItem;
 import com.example.isp.service.UserChecklistItemService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
