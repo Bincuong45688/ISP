@@ -9,7 +9,7 @@ import lombok.*;
 @Builder
 public class CategoryResponse {
 
-    private Long categoryId;        // ID danh mục
-    private String categoryName;    // Tên danh mục
-    private String description;     // Mô tả danh mục
+    private Long categoryId;
+    private String categoryName;
+    private String description;
 }

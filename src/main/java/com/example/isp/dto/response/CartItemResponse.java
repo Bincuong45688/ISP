@@ -1,16 +1,19 @@
 package com.example.isp.dto.response;
 
 import lombok.*;
+import java.math.BigDecimal;
 
-@Getter
-@Setter
+@Data
+@Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@Builder
 public class CartItemResponse {
-
-    private Long productId;       // ID sản phẩm
-    private String productName;   // Tên sản phẩm
-    private Integer quantity;     // Số lượng trong giỏ
-    private Boolean selected;     // Trạng thái được chọn (true/false)
+    private Long cartItemId;
+    private Long productId;
+    private String productName;
+    private String productImage;
+    private BigDecimal unitPrice;
+    private int quantity;
+    private BigDecimal lineTotal;
+    private boolean selected;
 }

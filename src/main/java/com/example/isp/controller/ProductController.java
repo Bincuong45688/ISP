@@ -102,8 +102,8 @@ public class ProductController {
         return productService.searchByName(q).stream().map(ProductMapper::toResponse).toList();
     }
 
-    // ==== BỘ LỌC vùng–loại–giá (TỰ ĐẶT MẶC ĐỊNH TRONG CODE) ====
-    // Gọi đơn giản: /api/products/filter?regionId=1&categoryId=3&minPrice=0&maxPrice=10000000
+    // ==== BỘ LỌC vùng–loại–giá
+
     @GetMapping("/filter")
     public Page<ProductResponse> filter(
             @RequestParam(required = false) Long regionId,

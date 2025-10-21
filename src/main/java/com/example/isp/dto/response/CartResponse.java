@@ -1,18 +1,20 @@
 package com.example.isp.dto.response;
 
 import lombok.*;
+import java.math.BigDecimal;
 import java.util.List;
 
-@Getter
-@Setter
+@Data
+@Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@Builder
 public class CartResponse {
-
-    private Long cartId;                          // ID của giỏ hàng
-    private String cartStatus;                    // Trạng thái (ACTIVE, CHECKED_OUT, v.v.)
-    private Long customerId;                      // Mã khách hàng sở hữu giỏ hàng
-    private String customerName;                  // Tên khách hàng
-    private List<CartItemResponse> items;         // Danh sách các sản phẩm trong giỏ
+    private Long cartId;
+    private String cartStatus;
+    private Long customerId;
+    private String customerName;
+    private List<CartItemResponse> items;
+    private int totalItems;
+    private BigDecimal subTotal;
+    private String currency;
 }

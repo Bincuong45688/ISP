@@ -9,7 +9,7 @@ import java.time.LocalDate;
 @NoArgsConstructor @AllArgsConstructor
 @SuperBuilder
 public class RegisterCustomerRequest extends RegisterRequest {
-    // Customer info
+
     private String customerName;
 
     private LocalDate birthDate;
