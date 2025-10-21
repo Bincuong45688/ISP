@@ -53,18 +53,19 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/api/categories/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/products/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/regions/**").permitAll()
-                        // Nếu muốn mở product-details cũng public thì đổi dòng dưới thành permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/checklists/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/checklist-items/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/product-details/**").authenticated()
 
                         // Write: STAFF
                         .requestMatchers(HttpMethod.POST,
-                                "/api/categories/**", "/api/products/**", "/api/product-details/**", "/api/regions/**"
+                                "/api/categories/**", "/api/products/**", "/api/product-details/**","/api/checklists/**","/api/product-details/**", "/api/regions/**"
                         ).hasAnyAuthority("ROLE_STAFF","STAFF")
                         .requestMatchers(HttpMethod.PUT,
-                                "/api/categories/**", "/api/products/**", "/api/product-details/**", "/api/regions/**"
+                                "/api/categories/**", "/api/products/**", "/api/product-details/**","/api/checklists/**", "/api/product-details/**","/api/regions/**"
                         ).hasAnyAuthority("ROLE_STAFF","STAFF")
                         .requestMatchers(HttpMethod.DELETE,
-                                "/api/categories/**", "/api/products/**", "/api/product-details/**", "/api/regions/**"
+                                "/api/categories/**", "/api/products/**", "/api/product-details/**","/api/checklists/**","/api/product-details/**", "/api/regions/**"
                         ).hasAnyAuthority("ROLE_STAFF","STAFF")
 
                         // Uploads: STAFF
