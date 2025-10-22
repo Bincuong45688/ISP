@@ -5,6 +5,7 @@ import com.example.isp.mapper.ProductMapper;
 import com.example.isp.model.Category;
 import com.example.isp.model.Product;
 import com.example.isp.model.Region;
+import com.example.isp.model.enums.ProductStatus;
 import com.example.isp.service.CloudinaryService;
 import com.example.isp.service.ProductService;
 import lombok.RequiredArgsConstructor;
@@ -31,8 +32,12 @@ public class ProductController {
     // ==== List ====
     @GetMapping
     public List<ProductResponse> list() {
-        return productService.list().stream().map(ProductMapper::toResponse).toList();
+        return productService.list().stream()
+                .map(ProductMapper::toResponse)
+                .toList();
     }
+
+
 
     // ==== Get by id ====
     @GetMapping("/{id}")
@@ -72,6 +77,7 @@ public class ProductController {
             @RequestParam(required = false) String productDescription,
             @RequestParam(required = false) Long categoryId,
             @RequestParam(required = false) Long regionId,
+            @RequestParam(required = false) ProductStatus productStatus,
             @RequestParam(value = "file", required = false) MultipartFile file
     ) {
         Product patch = Product.builder()
@@ -82,10 +88,16 @@ public class ProductController {
                 .region(regionId != null ? Region.builder().regionId(regionId).build() : null)
                 .build();
 
+
+        if (productStatus != null) {
+            patch.setProductStatus(productStatus); // AVAILABLE | UNAVAILABLE
+        }
+
         if (file != null && !file.isEmpty()) {
-            String newUrl = cloudinaryService.uploadImage(file, "isp/products");
+            String newUrl = cloudinaryService.uploadImage(file, "isp/products/"); // nên có dấu "/" cuối
             patch.setProductImage(newUrl);
         }
+
         return ProductMapper.toResponse(productService.update(id, patch));
     }
 

@@ -1,6 +1,7 @@
 package com.example.isp.service;
 
 import com.example.isp.model.Product;
+import com.example.isp.model.enums.ProductStatus;
 import com.example.isp.repository.ProductRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -23,6 +24,7 @@ public class ProductServiceImpl implements ProductService {
     @Override
     @Transactional(readOnly = true)
     public List<Product> list() {
+
         return productRepo.findAllWithRelations(Sort.by(Sort.Order.desc("productId")));
     }
 
@@ -34,6 +36,7 @@ public class ProductServiceImpl implements ProductService {
 
     @Override
     public Product create(Product p) {
+        p.setProductStatus(ProductStatus.AVAILABLE);
         return productRepo.save(p);
     }
 
@@ -46,6 +49,10 @@ public class ProductServiceImpl implements ProductService {
         if (patch.getProductImage() != null) cur.setProductImage(patch.getProductImage());
         if (patch.getCategory() != null) cur.setCategory(patch.getCategory());
         if (patch.getRegion() != null) cur.setRegion(patch.getRegion());
+        if (patch.getProductStatus() != null) {
+            cur.setProductStatus(patch.getProductStatus()); // AVAILABLE ↔ UNAVAILABLE
+        }
+
         return productRepo.save(cur);
     }
 

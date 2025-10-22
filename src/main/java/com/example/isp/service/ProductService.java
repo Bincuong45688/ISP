@@ -1,6 +1,7 @@
 package com.example.isp.service;
 
 import com.example.isp.model.Product;
+import com.example.isp.model.enums.ProductStatus;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
