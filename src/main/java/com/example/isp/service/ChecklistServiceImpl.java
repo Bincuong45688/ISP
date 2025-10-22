@@ -21,46 +21,46 @@ public class ChecklistServiceImpl implements ChecklistService {
 
     @Override
     public Checklist create(Checklist checklist) {
-        // Kiểm tra tên đã tồn tại
-        if (checklistRepository.existsByItemName(checklist.getItemName())) {
-            throw new IllegalArgumentException("Tên vật phẩm đã tồn tại: " + checklist.getItemName());
-        }
-        return checklistRepository.save(checklist);
+        Checklist saved = checklistRepository.save(checklist);
+        // Reload to ensure relations are loaded
+        return checklistRepository.findByIdWithRelations(saved.getChecklistId())
+                .orElseThrow(() -> new EntityNotFoundException("Checklist not found after save: " + saved.getChecklistId()));
     }
 
     @Override
     public Checklist update(Long id, Checklist checklist) {
-        Checklist existing = checklistRepository.findById(id)
+        Checklist existing = checklistRepository.findByIdWithRelations(id)
                 .orElseThrow(() -> new EntityNotFoundException("Checklist not found: " + id));
 
-        if (checklist.getItemName() != null) {
-            // Kiểm tra tên mới có trùng với item khác không
-            if (!existing.getItemName().equals(checklist.getItemName()) 
-                && checklistRepository.existsByItemName(checklist.getItemName())) {
-                throw new IllegalArgumentException("Tên vật phẩm đã tồn tại: " + checklist.getItemName());
-            }
-            existing.setItemName(checklist.getItemName());
+        if (checklist.getRitual() != null) {
+            existing.setRitual(checklist.getRitual());
         }
-        if (checklist.getItemDescription() != null) {
-            existing.setItemDescription(checklist.getItemDescription());
+        if (checklist.getItem() != null) {
+            existing.setItem(checklist.getItem());
         }
-        if (checklist.getUnit() != null) {
-            existing.setUnit(checklist.getUnit());
+        if (checklist.getQuantity() != null) {
+            existing.setQuantity(checklist.getQuantity());
+        }
+        if (checklist.getCheckNote() != null) {
+            existing.setCheckNote(checklist.getCheckNote());
         }
 
-        return checklistRepository.save(existing);
+        Checklist saved = checklistRepository.save(existing);
+        // Reload to ensure relations are loaded
+        return checklistRepository.findByIdWithRelations(saved.getChecklistId())
+                .orElseThrow(() -> new EntityNotFoundException("Checklist not found after save: " + saved.getChecklistId()));
     }
 
     @Override
     @Transactional(readOnly = true)
     public List<Checklist> list() {
-        return checklistRepository.findAll();
+        return checklistRepository.findAllWithRelations();
     }
 
     @Override
     @Transactional(readOnly = true)
     public Checklist get(Long id) {
-        return checklistRepository.findById(id)
+        return checklistRepository.findByIdWithRelations(id)
                 .orElseThrow(() -> new EntityNotFoundException("Checklist not found: " + id));
     }
 
@@ -74,25 +74,34 @@ public class ChecklistServiceImpl implements ChecklistService {
 
     @Override
     @Transactional(readOnly = true)
-    public List<Checklist> searchByName(String keyword) {
-        if (keyword == null || keyword.isBlank()) {
-            return checklistRepository.findAll();
-        }
-        return checklistRepository.searchByName(keyword);
+    public List<Checklist> getByRitualId(Long ritualId) {
+        return checklistRepository.findByRitualId(ritualId);
     }
 
     @Override
     @Transactional(readOnly = true)
-    public Page<Checklist> filter(String name, Pageable pageable) {
-        final String nameF = name;
+    public List<Checklist> getByItemId(Long itemId) {
+        return checklistRepository.findByItemId(itemId);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Page<Checklist> filter(Long ritualId, Long itemId, Pageable pageable) {
+        final Long ritualIdF = ritualId;
+        final Long itemIdF = itemId;
 
         Specification<Checklist> spec = Specification.allOf();
 
-        // Lọc theo tên (tìm kiếm gần đúng)
-        if (nameF != null && !nameF.isBlank()) {
+        // Lọc theo ritual ID
+        if (ritualIdF != null) {
             spec = spec.and((root, query, cb) ->
-                    cb.like(cb.lower(root.get("itemName")),
-                            "%" + nameF.toLowerCase() + "%"));
+                    cb.equal(root.get("ritual").get("ritualId"), ritualIdF));
+        }
+
+        // Lọc theo item ID
+        if (itemIdF != null) {
+            spec = spec.and((root, query, cb) ->
+                    cb.equal(root.get("item").get("itemId"), itemIdF));
         }
 
         return checklistRepository.findAll(spec, pageable);

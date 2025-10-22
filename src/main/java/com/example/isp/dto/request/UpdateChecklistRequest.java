@@ -1,14 +1,16 @@
 package com.example.isp.dto.request;
 
+import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.Size;
 
 public record UpdateChecklistRequest(
-        @Size(max = 255, message = "Tên vật phẩm không được vượt quá 255 ký tự")
-        String itemName,
+        Long ritualId,
 
-        @Size(max = 5000, message = "Mô tả không được vượt quá 5000 ký tự")
-        String itemDescription,
+        Long itemId,
 
-        @Size(max = 255, message = "Đơn vị tính không được vượt quá 255 ký tự")
-        String unit
+        @Min(value = 1, message = "Số lượng phải lớn hơn 0")
+        Integer quantity,
+
+        @Size(max = 255, message = "Ghi chú không được vượt quá 255 ký tự")
+        String checkNote
 ) {}

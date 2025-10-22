@@ -9,37 +9,59 @@ import java.util.List;
 public interface ChecklistService {
 
     /**
-     * Tạo mới một checklist item.
+     * Tạo mới một checklist.
+     * @param checklist đối tượng Checklist cần lưu
+     * @return Checklist sau khi được lưu
      */
     Checklist create(Checklist checklist);
 
     /**
-     * Cập nhật thông tin checklist item theo ID.
+     * Cập nhật thông tin checklist theo ID.
+     * @param id ID checklist cần cập nhật
+     * @param checklist dữ liệu mới
+     * @return Checklist sau khi được cập nhật
      */
     Checklist update(Long id, Checklist checklist);
 
     /**
-     * Lấy danh sách toàn bộ checklist items.
+     * Lấy danh sách toàn bộ checklist.
+     * @return Danh sách Checklist
      */
     List<Checklist> list();
 
     /**
-     * Lấy một checklist item theo ID.
+     * Lấy một checklist theo ID.
+     * @param id ID của checklist
+     * @return Checklist
      */
     Checklist get(Long id);
 
     /**
-     * Xóa checklist item theo ID.
+     * Xóa checklist theo ID.
+     * @param id ID của checklist cần xóa
      */
     void delete(Long id);
 
     /**
-     * Tìm kiếm checklist theo tên.
+     * Lấy danh sách checklist theo ritual ID.
+     * @param ritualId ID của ritual
+     * @return Danh sách Checklist
      */
-    List<Checklist> searchByName(String keyword);
+    List<Checklist> getByRitualId(Long ritualId);
 
     /**
-     * Lọc checklist theo tên với phân trang.
+     * Lấy danh sách checklist theo item ID.
+     * @param itemId ID của item
+     * @return Danh sách Checklist
      */
-    Page<Checklist> filter(String name, Pageable pageable);
+    List<Checklist> getByItemId(Long itemId);
+
+    /**
+     * Lọc checklist theo ritual ID và item ID với phân trang.
+     * @param ritualId ID của ritual
+     * @param itemId ID của item
+     * @param pageable thông tin phân trang
+     * @return Page<Checklist>
+     */
+    Page<Checklist> filter(Long ritualId, Long itemId, Pageable pageable);
 }
