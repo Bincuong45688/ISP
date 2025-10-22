@@ -37,5 +37,5 @@ public class Product {
     private String productImage;
 
     @Enumerated(EnumType.STRING)
-    private ProductStatus productStatus;
+    private ProductStatus status;
 }

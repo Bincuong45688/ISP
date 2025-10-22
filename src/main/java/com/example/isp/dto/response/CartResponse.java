@@ -18,3 +18,4 @@ public class CartResponse {
     private BigDecimal subTotal;
     private String currency;
 }
+

@@ -22,4 +22,6 @@ public class CreateProductRequest {
 
     @NotNull
     private Long regionId;
+
+    private String status;
 }
