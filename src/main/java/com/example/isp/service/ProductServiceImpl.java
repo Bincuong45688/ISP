@@ -43,6 +43,7 @@ public class ProductServiceImpl implements ProductService {
         if (patch.getProductImage() != null) cur.setProductImage(patch.getProductImage());
         if (patch.getCategory() != null) cur.setCategory(patch.getCategory());
         if (patch.getRegion() != null) cur.setRegion(patch.getRegion());
+        if (patch.getStatus() != null) cur.setStatus(patch.getStatus());
         return productRepo.save(cur);
     }
 

@@ -13,7 +13,7 @@ public final class ProductMapper {
         String categoryName = (c != null) ? c.getCategoryName() : null;
         Long regionId = (r != null) ? r.getRegionId() : null;
         String regionName = (r != null) ? r.getRegionName() : null;
-
+        String status = (p.getStatus() != null) ? p.getStatus().name() : null;
         return new ProductResponse(
                 p.getProductId(),
                 p.getProductName(),
@@ -21,7 +21,8 @@ public final class ProductMapper {
                 p.getProductDescription(),
                 p.getProductImage(),
                 categoryId, categoryName,
-                regionId, regionName
+                regionId, regionName,
+                status
         );
     }
 }

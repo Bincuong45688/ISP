@@ -11,5 +11,6 @@ public record ProductResponse(
         Long categoryId,
         String categoryName,
         Long regionId,
-        String regionName
+        String regionName,
+        String status
 ) {}
