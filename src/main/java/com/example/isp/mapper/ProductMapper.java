@@ -2,6 +2,7 @@ package com.example.isp.mapper;
 
 import com.example.isp.dto.response.ProductResponse;
 import com.example.isp.model.Product;
+import com.example.isp.model.enums.ProductStatus;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -19,18 +20,23 @@ public final class ProductMapper {
         Long regionId = (r != null) ? r.getRegionId() : null;
         String regionName = (r != null) ? r.getRegionName() : null;
 
+
         return new ProductResponse(
                 p.getProductId(),
                 p.getProductName(),
                 p.getPrice(),
                 p.getProductDescription(),
                 p.getProductImage(),
-                categoryId, categoryName,
-                regionId, regionName
+                categoryId,
+                categoryName,
+                regionId,
+                regionName,
+                p.getProductStatus(),                       // enum AVAILABLE / UNAVAILABLE
+                p.getProductStatus() == ProductStatus.AVAILABLE // boolean available
         );
     }
 
-    // === Thêm mới: tiện ích chuyển danh sách ===
+    // === Tiện ích chuyển danh sách ===
     public static List<ProductResponse> toResponseList(List<Product> products) {
         return products.stream()
                 .map(ProductMapper::toResponse)

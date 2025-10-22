@@ -1,5 +1,6 @@
 package com.example.isp.dto.request;
 
+import com.example.isp.model.enums.ProductStatus;
 import lombok.*;
 import java.math.BigDecimal;
 
@@ -11,4 +12,5 @@ public class UpdateProductRequest {
     private String productImage;
     private Long categoryId;
     private Long regionId;
+    private ProductStatus productStatus;
 }

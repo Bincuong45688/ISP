@@ -1,6 +1,7 @@
 package com.example.isp.repository;
 
 import com.example.isp.model.Product;
+import com.example.isp.model.enums.ProductStatus;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
@@ -37,4 +38,5 @@ public interface ProductRepository extends JpaRepository<Product, Long>, JpaSpec
         where lower(p.productName) like lower(concat('%', :keyword, '%'))
         """)
     List<Product> searchByName(@Param("keyword") String keyword);
+    List<Product> findByProductStatus(ProductStatus status);
 }
