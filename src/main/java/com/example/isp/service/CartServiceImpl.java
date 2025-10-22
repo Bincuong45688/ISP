@@ -109,7 +109,36 @@ public class CartServiceImpl implements CartService {
         List<CartItem> updated = cartItemRepository.findByCart(cart);
         return toCartResponse(cart, updated);
     }
+    @Override
+    public CartResponse increaseItem(Long customerId, Long productId, int quantity) {
+        int inc = (quantity <= 0) ? 1 : quantity;
 
+        Cart cart = getOpenCart(customerId);
+        List<CartItem> items = cartItemRepository.findByCart(cart);
+
+        CartItem item = items.stream()
+                .filter(i -> i.getProduct().getProductId().equals(productId))
+                .findFirst()
+                .orElse(null);
+
+        if (item == null) {
+            // chưa có thì tạo mới với qty = inc
+            Product product = productRepository.findById(productId)
+                    .orElseThrow(() -> new jakarta.persistence.EntityNotFoundException("Product not found: " + productId));
+            item = new CartItem();
+            item.setCart(cart);
+            item.setProduct(product);
+            item.setQuantity(inc);
+            item.setSelected(true);
+        } else {
+            item.setQuantity(item.getQuantity() + inc);
+            item.setSelected(true);
+        }
+
+        cartItemRepository.save(item);
+        List<CartItem> updated = cartItemRepository.findByCart(cart);
+        return toCartResponse(cart, updated);
+    }
 
     // === Xóa toàn bộ giỏ ===
     @Override
