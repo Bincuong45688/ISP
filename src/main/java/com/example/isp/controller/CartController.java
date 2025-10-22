@@ -1,6 +1,7 @@
 package com.example.isp.controller;
 
 import com.example.isp.dto.request.AddToCartRequest;
+import com.example.isp.dto.request.AdjustCartItemRequest;
 import com.example.isp.dto.response.CartResponse;
 import com.example.isp.repository.CustomerRepository;
 import com.example.isp.service.CartService;
@@ -8,6 +9,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
@@ -50,6 +52,14 @@ public class CartController {
     public void removeItem(@RequestParam Long productId) {
         cartService.removeItem(currentCustomerId(), productId);
     }
+
+    // === Giảm 1 sản phẩm trong giỏ ===
+    @PostMapping("/items/decrease")
+    @ResponseStatus(HttpStatus.OK)
+    public CartResponse decreaseItem(@RequestParam Long productId) {
+        return cartService.decreaseItem(currentCustomerId(), productId, 1);
+    }
+
 
     // === Xóa toàn bộ giỏ ===
     @PostMapping("/clear")
