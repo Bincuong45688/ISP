@@ -1,6 +1,7 @@
 
 package com.example.isp.model;
 
+import com.example.isp.model.enums.ProductStatus;
 import jakarta.persistence.*;
 import lombok.*;
 import java.math.BigDecimal;
@@ -36,5 +37,5 @@ public class Product {
     private String productImage;
 
     @Enumerated(EnumType.STRING)
-    private ProductStatus productStatus;
+    private ProductStatus status;
 }

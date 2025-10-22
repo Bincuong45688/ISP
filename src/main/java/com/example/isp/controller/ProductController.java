@@ -90,7 +90,7 @@ public class ProductController {
 
 
         if (productStatus != null) {
-            patch.setProductStatus(productStatus); // AVAILABLE | UNAVAILABLE
+            patch.setStatus(productStatus); // AVAILABLE | UNAVAILABLE
         }
 
         if (file != null && !file.isEmpty()) {

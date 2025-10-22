@@ -38,5 +38,5 @@ public interface ProductRepository extends JpaRepository<Product, Long>, JpaSpec
         where lower(p.productName) like lower(concat('%', :keyword, '%'))
         """)
     List<Product> searchByName(@Param("keyword") String keyword);
-    List<Product> findByProductStatus(ProductStatus status);
+    List<Product> findByStatus(ProductStatus status);
 }

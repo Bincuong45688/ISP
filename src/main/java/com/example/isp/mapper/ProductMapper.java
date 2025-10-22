@@ -31,8 +31,8 @@ public final class ProductMapper {
                 categoryName,
                 regionId,
                 regionName,
-                p.getProductStatus(),                       // enum AVAILABLE / UNAVAILABLE
-                p.getProductStatus() == ProductStatus.AVAILABLE // boolean available
+                p.getStatus(),                       // enum AVAILABLE / UNAVAILABLE
+                p.getStatus() == ProductStatus.AVAILABLE // boolean available
         );
     }
 

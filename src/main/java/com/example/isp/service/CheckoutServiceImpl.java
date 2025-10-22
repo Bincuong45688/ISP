@@ -3,6 +3,7 @@ package com.example.isp.service;
 import com.example.isp.dto.request.CheckoutRequest;
 import com.example.isp.dto.response.CheckoutResponse;
 import com.example.isp.model.*;
+import com.example.isp.model.enums.CartStatus;
 import com.example.isp.model.enums.ProductStatus;
 import com.example.isp.repository.*;
 import jakarta.transaction.Transactional;
@@ -41,7 +42,7 @@ public class CheckoutServiceImpl implements  CheckoutService{
                 .orElseThrow(() -> new RuntimeException("Customer not found"));
 
         // 4. Tìm giỏ hàng ACTIVE của Customer
-        Cart cart = cartRepository.findByCustomerAndCartStatus(customer, "OPEN")
+        Cart cart = cartRepository.findByCustomerAndCartStatus(customer, CartStatus.OPEN)
                 .orElseThrow(() -> new RuntimeException("No active cart found for this customer"));
 
         // 5. Lấy các item được chọn để checkout
@@ -93,16 +94,17 @@ public class CheckoutServiceImpl implements  CheckoutService{
                     .unitPrice(unitPrice)
                     .totalPrice(totalPrice)
                     .build();
+            orderDetailRepository.save(detail);
         }
 
         // 9. Cập nhật trạng thái Cart → CHECKED_OUT
-        cart.setCartStatus("CHECKED_OUT");
+        cart.setCartStatus(CartStatus.CHECKED_OUT);
         cartRepository.save(cart);
 
         // Tạo cart mới cho customer sau khi checkout thành công
         Cart newCart = Cart.builder()
                 .customer(customer)
-                .cartStatus("OPEN")
+                .cartStatus(CartStatus.OPEN)
                 .build();
         cartRepository.save(newCart);
 

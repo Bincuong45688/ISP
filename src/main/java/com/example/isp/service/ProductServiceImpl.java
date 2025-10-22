@@ -36,7 +36,7 @@ public class ProductServiceImpl implements ProductService {
 
     @Override
     public Product create(Product p) {
-        p.setProductStatus(ProductStatus.AVAILABLE);
+        p.setStatus(ProductStatus.AVAILABLE);
         return productRepo.save(p);
     }
 
@@ -49,8 +49,8 @@ public class ProductServiceImpl implements ProductService {
         if (patch.getProductImage() != null) cur.setProductImage(patch.getProductImage());
         if (patch.getCategory() != null) cur.setCategory(patch.getCategory());
         if (patch.getRegion() != null) cur.setRegion(patch.getRegion());
-        if (patch.getProductStatus() != null) {
-            cur.setProductStatus(patch.getProductStatus()); // AVAILABLE ↔ UNAVAILABLE
+        if (patch.getStatus() != null) {
+            cur.setStatus(patch.getStatus()); // AVAILABLE ↔ UNAVAILABLE
         }
 
         return productRepo.save(cur);

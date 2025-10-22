@@ -1,7 +1,10 @@
 package com.example.isp.model;
 
+import com.example.isp.model.enums.CartStatus;
 import jakarta.persistence.*;
 import lombok.*;
+
+import java.util.List;
 
 @Entity
 @Table(name = "Cart")
@@ -18,6 +21,10 @@ public class Cart {
     @JoinColumn(name = "customer_id", nullable = false)
     private Customer customer;
 
+    @Enumerated(EnumType.STRING)
     @Column(name = "cart_status", length = 50)
-    private String cartStatus;
+    private CartStatus cartStatus;
+
+    @OneToMany(mappedBy = "cart", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private List<CartItem> cartItems;
 }
