@@ -9,42 +9,51 @@ import java.util.List;
 public interface ChecklistItemService {
 
     /**
-     * Tạo mới một checklist item.
+     * Tạo mới một vật phẩm.
+     * @param item đối tượng ChecklistItem cần lưu
+     * @return ChecklistItem sau khi được lưu
      */
-    ChecklistItem create(ChecklistItem checklistItem);
+    ChecklistItem create(ChecklistItem item);
 
     /**
-     * Cập nhật thông tin checklist item theo ID.
+     * Cập nhật thông tin vật phẩm theo ID.
+     * @param id ID vật phẩm cần cập nhật
+     * @param item dữ liệu mới
+     * @return ChecklistItem sau khi được cập nhật
      */
-    ChecklistItem update(Long id, ChecklistItem checklistItem);
+    ChecklistItem update(Long id, ChecklistItem item);
 
     /**
-     * Lấy danh sách toàn bộ checklist items.
+     * Lấy danh sách toàn bộ vật phẩm.
+     * @return Danh sách ChecklistItem
      */
     List<ChecklistItem> list();
 
     /**
-     * Lấy một checklist item theo ID.
+     * Lấy một vật phẩm theo ID.
+     * @param id ID của vật phẩm
+     * @return ChecklistItem
      */
     ChecklistItem get(Long id);
 
     /**
-     * Xóa checklist item theo ID.
+     * Xóa vật phẩm theo ID.
+     * @param id ID của vật phẩm cần xóa
      */
     void delete(Long id);
 
     /**
-     * Lấy tất cả items của một ritual.
+     * Tìm kiếm vật phẩm theo tên.
+     * @param keyword từ khóa tìm kiếm
+     * @return Danh sách ChecklistItem
      */
-    List<ChecklistItem> getByRitualId(Long ritualId);
+    List<ChecklistItem> searchByName(String keyword);
 
     /**
-     * Lấy tất cả items của một checklist.
+     * Lọc vật phẩm theo tên với phân trang.
+     * @param name tên vật phẩm (tìm kiếm gần đúng)
+     * @param pageable thông tin phân trang
+     * @return Page<ChecklistItem>
      */
-    List<ChecklistItem> getByChecklistId(Long itemId);
-
-    /**
-     * Lọc checklist items theo ritual và checklist với phân trang.
-     */
-    Page<ChecklistItem> filter(Long ritualId, Long itemId, Pageable pageable);
+    Page<ChecklistItem> filter(String name, Pageable pageable);
 }

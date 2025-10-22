@@ -10,15 +10,20 @@ public class Checklist {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "item_id")
-    private Long itemId;
+    @Column(name = "checklist_id")
+    private Long checklistId;
 
-    @Column(name = "item_name", nullable = false, length = 255)
-    private String itemName;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "ritual_id", foreignKey = @ForeignKey(name = "fk_checklist_ritual"))
+    private Ritual ritual;
 
-    @Column(name = "item_description", columnDefinition = "TEXT")
-    private String itemDescription;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "item_id", foreignKey = @ForeignKey(name = "fk_checklist_item"))
+    private ChecklistItem item;
 
-    @Column(name = "unit", length = 255)
-    private String unit;
+    @Column(name = "quantity")
+    private Integer quantity;
+
+    @Column(name = "check_note", length = 255)
+    private String checkNote;
 }
