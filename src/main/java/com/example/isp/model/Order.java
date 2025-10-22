@@ -33,6 +33,15 @@ public class Order {
     private String status; // PENDING, CONFIRMED, DELIVERED, CANCELED
     private LocalDateTime createdAt;
 
+    @Column(name = "note")
+    private String note;
+
+    @Column(name = "receiver_name")
+    private String receiverName;
+
+    @Column(name = "receiver_email")
+    private String receiverEmail;
+
     @OneToMany(mappedBy = "order", cascade = CascadeType.ALL)
     private List<OrderDetail> orderDetails;
 }

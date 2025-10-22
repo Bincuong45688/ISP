@@ -70,9 +70,12 @@ public class CheckoutServiceImpl implements  CheckoutService{
         // 7. Tạo Order mới
         Order order = Order.builder()
                 .customer(customer)
-                .address(request.getAddress() != null ? request.getAddress() : customer.getAddress())
+                .receiverName(request.getFullName())
+                .receiverEmail(request.getEmail())
                 .phone(request.getPhone() != null ? request.getPhone() : account.getPhone())
+                .address(request.getAddress() != null ? request.getAddress() : customer.getAddress())
                 .paymentMethod(request.getPaymentMethod())
+                .note(request.getNote())
                 .totalAmount(total)
                 .status("PENDING")
                 .createdAt(LocalDateTime.now())
@@ -112,9 +115,14 @@ public class CheckoutServiceImpl implements  CheckoutService{
         // 10. Trả về response
         return CheckoutResponse.builder()
                 .orderId(order.getOrderId())
-                .totalAmount(total)
+                .receiverName(order.getReceiverName())
+                .email(order.getReceiverEmail())
+                .phone(order.getPhone())
+                .address(order.getAddress())
                 .paymentMethod(order.getPaymentMethod())
+                .totalAmount(order.getTotalAmount())
                 .status(order.getStatus())
+                .createdAt(order.getCreatedAt())
                 .message("Checkout successful")
                 .build();
     }
