@@ -8,4 +8,7 @@ public interface CartService {
     CartResponse addItem(Long customerId, AddToCartRequest req);
     void removeItem(Long customerId, Long productId);
     void clearCart(Long customerId);
+    CartResponse decreaseItem(Long customerId, Long productId, int quantity);
+
+
 }

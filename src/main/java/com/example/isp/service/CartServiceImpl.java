@@ -82,6 +82,34 @@ public class CartServiceImpl implements CartService {
                 .findFirst()
                 .ifPresent(cartItemRepository::delete);
     }
+    // === Giảm số lượng 1 sản phẩm trong giỏ ===
+    @Override
+    public CartResponse decreaseItem(Long customerId, Long productId, int quantity) {
+        int dec = (quantity <= 0) ? 1 : quantity;
+
+        Cart cart = getOpenCart(customerId);
+        List<CartItem> items = cartItemRepository.findByCart(cart);
+
+        CartItem item = items.stream()
+                .filter(i -> i.getProduct().getProductId().equals(productId))
+                .findFirst()
+                .orElseThrow(() -> new EntityNotFoundException("Item not found in cart: " + productId));
+
+        int newQty = item.getQuantity() - dec;
+        if (newQty > 0) {
+            item.setQuantity(newQty);
+            // vẫn giữ chọn để FE cập nhật ngay
+            item.setSelected(Boolean.TRUE);
+            cartItemRepository.save(item);
+        } else {
+            // giảm về 0 hoặc âm -> xóa hẳn item
+            cartItemRepository.delete(item);
+        }
+
+        List<CartItem> updated = cartItemRepository.findByCart(cart);
+        return toCartResponse(cart, updated);
+    }
+
 
     // === Xóa toàn bộ giỏ ===
     @Override
