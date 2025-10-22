@@ -59,7 +59,11 @@ public class CartController {
     public CartResponse decreaseItem(@RequestParam Long productId) {
         return cartService.decreaseItem(currentCustomerId(), productId, 1);
     }
-
+    // Tăng 1 sản phẩm trong giỏ
+    @PostMapping("/items/increase")
+    public CartResponse increaseItem(@RequestParam Long productId) {
+        return cartService.increaseItem(currentCustomerId(), productId, 1);
+    }
 
     // === Xóa toàn bộ giỏ ===
     @PostMapping("/clear")
