@@ -1,13 +1,19 @@
 package com.example.isp.service;
 
+import com.example.isp.dto.request.AddToCartRequest;
+import com.example.isp.dto.response.*;
 import com.example.isp.model.*;
+import com.example.isp.model.enums.CartStatus;
 import com.example.isp.repository.*;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.util.List;
+
+import static java.math.BigDecimal.ZERO;
 
 @Service
 @RequiredArgsConstructor
@@ -17,86 +23,132 @@ public class CartServiceImpl implements CartService {
     private final CartRepository cartRepository;
     private final CartItemRepository cartItemRepository;
     private final CustomerRepository customerRepository;
+    private final ProductRepository productRepository;
 
-    @Override
-    public Cart getOpenCart(Long customerId) {
+    // === Lấy hoặc tạo giỏ hàng đang mở ===
+    private Cart getOpenCart(Long customerId) {
         Customer customer = customerRepository.findById(customerId)
                 .orElseThrow(() -> new EntityNotFoundException("Customer not found: " + customerId));
 
-        return cartRepository.findByCustomerAndCartStatus(customer, "OPEN")
+        return cartRepository.findByCustomerAndCartStatus(customer, CartStatus.OPEN)
                 .orElseGet(() -> cartRepository.save(
                         Cart.builder()
                                 .customer(customer)
-                                .cartStatus("OPEN")
+                                .cartStatus(CartStatus.OPEN)
                                 .build()
                 ));
     }
 
+    // === Lấy giỏ hàng hiện tại ===
     @Override
-    public Cart addItem(Long customerId, Long productId, Integer quantity) {
-        if (quantity == null || quantity <= 0) {
-            throw new IllegalArgumentException("Quantity must be > 0");
-        }
-
+    public CartResponse getCart(Long customerId) {
         Cart cart = getOpenCart(customerId);
+        List<CartItem> items = cartItemRepository.findByCart(cart);
+        return toCartResponse(cart, items);
+    }
 
-        CartItem item = cartItemRepository
-                .findByCart_CartIdAndProduct_ProductId(cart.getCartId(), productId)
+    // === Thêm sản phẩm vào giỏ ===
+    @Override
+    public CartResponse addItem(Long customerId, AddToCartRequest req) {
+        Cart cart = getOpenCart(customerId);
+        Product product = productRepository.findById(req.getProductId())
+                .orElseThrow(() -> new EntityNotFoundException("Product not found: " + req.getProductId()));
+
+        CartItem item = cartItemRepository.findByCart(cart).stream()
+                .filter(i -> i.getProduct().getProductId().equals(product.getProductId()))
+                .findFirst()
                 .orElseGet(() -> {
-                    CartItem ci = new CartItem();
-                    ci.setCart(cart);
-                    Product p = new Product();
-                    p.setProductId(productId); // chỉ set FK, không load toàn bộ entity
-                    ci.setProduct(p);
-                    ci.setQuantity(0);
-                    ci.setSelected(true);
-                    return ci;
+                    CartItem newItem = new CartItem();
+                    newItem.setCart(cart);
+                    newItem.setProduct(product);
+                    newItem.setQuantity(0);
+                    newItem.setSelected(true);
+                    return newItem;
                 });
 
-        item.setQuantity(item.getQuantity() + quantity);
+        item.setQuantity(item.getQuantity() + req.getQuantity());
+        item.setSelected(true);
         cartItemRepository.save(item);
-        return cart;
+
+        return toCartResponse(cart, cartItemRepository.findByCart(cart));
     }
 
+    // === Xóa 1 sản phẩm khỏi giỏ ===
     @Override
-    public Cart removeItem(Long customerId, Long productId, Integer quantity) {
-        if (quantity == null || quantity <= 0) {
-            throw new IllegalArgumentException("Quantity must be > 0");
-        }
+    public void removeItem(Long customerId, Long productId) {
+        Cart cart = getOpenCart(customerId);
+        cartItemRepository.findByCart(cart).stream()
+                .filter(i -> i.getProduct().getProductId().equals(productId))
+                .findFirst()
+                .ifPresent(cartItemRepository::delete);
+    }
+    // === Giảm số lượng 1 sản phẩm trong giỏ ===
+    @Override
+    public CartResponse decreaseItem(Long customerId, Long productId, int quantity) {
+        int dec = (quantity <= 0) ? 1 : quantity;
 
         Cart cart = getOpenCart(customerId);
+        List<CartItem> items = cartItemRepository.findByCart(cart);
 
-        CartItem item = cartItemRepository
-                .findByCart_CartIdAndProduct_ProductId(cart.getCartId(), productId)
-                .orElseThrow(() -> new EntityNotFoundException("Cart item not found"));
+        CartItem item = items.stream()
+                .filter(i -> i.getProduct().getProductId().equals(productId))
+                .findFirst()
+                .orElseThrow(() -> new EntityNotFoundException("Item not found in cart: " + productId));
 
-        int newQty = item.getQuantity() - quantity;
-        if (newQty <= 0) {
-            cartItemRepository.delete(item);
-        } else {
+        int newQty = item.getQuantity() - dec;
+        if (newQty > 0) {
             item.setQuantity(newQty);
+            // vẫn giữ chọn để FE cập nhật ngay
+            item.setSelected(Boolean.TRUE);
             cartItemRepository.save(item);
-        }
-        return cart;
-    }
-
-    @Override
-    public Cart clear(Long customerId) {
-        Cart cart = getOpenCart(customerId);
-        cartItemRepository.deleteByCart_CartId(cart.getCartId());
-        return cart;
-    }
-
-    @Override
-    public Cart checkout(Long customerId) {
-        Cart cart = getOpenCart(customerId);
-        List<CartItem> items = cartItemRepository.findByCart_CartId(cart.getCartId());
-
-        if (items.isEmpty()) {
-            throw new IllegalStateException("Cart is empty");
+        } else {
+            // giảm về 0 hoặc âm -> xóa hẳn item
+            cartItemRepository.delete(item);
         }
 
-        cart.setCartStatus("CHECKED_OUT");
-        return cartRepository.save(cart);
+        List<CartItem> updated = cartItemRepository.findByCart(cart);
+        return toCartResponse(cart, updated);
+    }
+
+
+    // === Xóa toàn bộ giỏ ===
+    @Override
+    public void clearCart(Long customerId) {
+        Cart cart = getOpenCart(customerId);
+        cartItemRepository.deleteAll(cartItemRepository.findByCart(cart));
+    }
+
+    // === Mapper trả về dữ liệu đầy đủ cho FE ===
+    private CartResponse toCartResponse(Cart cart, List<CartItem> items) {
+        List<CartItemResponse> itemResponses = items.stream().map(i -> {
+            BigDecimal price = i.getProduct().getPrice(); // BigDecimal
+            BigDecimal lineTotal = price.multiply(BigDecimal.valueOf(i.getQuantity()));
+
+            return CartItemResponse.builder()
+                    .cartItemId(i.getCartItemId())
+                    .productId(i.getProduct().getProductId())
+                    .productName(i.getProduct().getProductName())
+                    .productImage(i.getProduct().getProductImage())
+                    .unitPrice(price)
+                    .quantity(i.getQuantity())
+                    .lineTotal(lineTotal)
+                    .selected(Boolean.TRUE.equals(i.getSelected()))
+                    .build();
+        }).toList();
+
+        BigDecimal subTotal = itemResponses.stream()
+                .map(CartItemResponse::getLineTotal)
+                .reduce(ZERO, BigDecimal::add);
+
+        return CartResponse.builder()
+                .cartId(cart.getCartId())
+                .cartStatus(cart.getCartStatus().name())
+                .customerId(cart.getCustomer().getCustomerId())
+                .customerName(cart.getCustomer().getCustomerName())
+                .items(itemResponses)
+                .totalItems(itemResponses.size())
+                .subTotal(subTotal)
+                .currency("VND")
+                .build();
     }
 }

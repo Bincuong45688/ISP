@@ -1,82 +1,100 @@
 package com.example.isp.service;
 
-import com.example.isp.dto.ChecklistDTO;
-import com.example.isp.model.ChecklistItem;
-import com.example.isp.model.enums.Checklist;
-import com.example.isp.model.enums.Ritual;
-import com.example.isp.repository.ChecklistItemRepository;
+import com.example.isp.model.Checklist;
 import com.example.isp.repository.ChecklistRepository;
-import com.example.isp.repository.RitualRepository;
+import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
 @Service
 @RequiredArgsConstructor
+@Transactional
 public class ChecklistServiceImpl implements ChecklistService {
 
     private final ChecklistRepository checklistRepository;
-    private final RitualRepository ritualRepository;
-    private final ChecklistItemRepository checklistItemRepository;
 
     @Override
-    public List<ChecklistDTO> getByRitual(Long ritualId) {
-        return checklistRepository.findByRitualId(ritualId)
-                .stream()
-                .map(c -> new ChecklistDTO(
-                        c.getChecklistId(),
-                        c.getRitual().getId(),
-                        c.getItem().getItemId(),
-                        c.getQuantity(),
-                        c.getCheckNote()
-                ))
-                .toList();
+    public Checklist create(Checklist checklist) {
+        // Kiểm tra tên đã tồn tại
+        if (checklistRepository.existsByItemName(checklist.getItemName())) {
+            throw new IllegalArgumentException("Tên vật phẩm đã tồn tại: " + checklist.getItemName());
+        }
+        return checklistRepository.save(checklist);
     }
 
     @Override
-    public ChecklistDTO addChecklist(ChecklistDTO dto) {
-        Ritual ritual = ritualRepository.findById(dto.getRitualId())
-                .orElseThrow(() -> new RuntimeException("Ritual not found"));
-        ChecklistItem item = checklistItemRepository.findById(dto.getItemId())
-                .orElseThrow(() -> new RuntimeException("Item not found"));
+    public Checklist update(Long id, Checklist checklist) {
+        Checklist existing = checklistRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Checklist not found: " + id));
 
-        Checklist checklist = Checklist.builder()
-                .ritual(ritual)
-                .item(item)
-                .quantity(dto.getQuantity())
-                .checkNote(dto.getCheckNote())
-                .build();
+        if (checklist.getItemName() != null) {
+            // Kiểm tra tên mới có trùng với item khác không
+            if (!existing.getItemName().equals(checklist.getItemName()) 
+                && checklistRepository.existsByItemName(checklist.getItemName())) {
+                throw new IllegalArgumentException("Tên vật phẩm đã tồn tại: " + checklist.getItemName());
+            }
+            existing.setItemName(checklist.getItemName());
+        }
+        if (checklist.getItemDescription() != null) {
+            existing.setItemDescription(checklist.getItemDescription());
+        }
+        if (checklist.getUnit() != null) {
+            existing.setUnit(checklist.getUnit());
+        }
 
-        Checklist saved = checklistRepository.save(checklist);
-        return new ChecklistDTO(
-                saved.getChecklistId(),
-                saved.getRitual().getId(),
-                saved.getItem().getItemId(),
-                saved.getQuantity(),
-                saved.getCheckNote()
-        );
+        return checklistRepository.save(existing);
     }
 
     @Override
-    public ChecklistDTO updateChecklist(Long id, ChecklistDTO dto) {
-        Checklist checklist = checklistRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Checklist not found"));
-        checklist.setQuantity(dto.getQuantity());
-        checklist.setCheckNote(dto.getCheckNote());
-        checklistRepository.save(checklist);
-
-        return new ChecklistDTO(
-                checklist.getChecklistId(),
-                checklist.getRitual().getId(),
-                checklist.getItem().getItemId(),
-                checklist.getQuantity(),
-                checklist.getCheckNote()
-        );
+    @Transactional(readOnly = true)
+    public List<Checklist> list() {
+        return checklistRepository.findAll();
     }
 
     @Override
-    public void deleteChecklist(Long id) {
+    @Transactional(readOnly = true)
+    public Checklist get(Long id) {
+        return checklistRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Checklist not found: " + id));
+    }
+
+    @Override
+    public void delete(Long id) {
+        if (!checklistRepository.existsById(id)) {
+            throw new EntityNotFoundException("Checklist not found: " + id);
+        }
         checklistRepository.deleteById(id);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<Checklist> searchByName(String keyword) {
+        if (keyword == null || keyword.isBlank()) {
+            return checklistRepository.findAll();
+        }
+        return checklistRepository.searchByName(keyword);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Page<Checklist> filter(String name, Pageable pageable) {
+        final String nameF = name;
+
+        Specification<Checklist> spec = Specification.allOf();
+
+        // Lọc theo tên (tìm kiếm gần đúng)
+        if (nameF != null && !nameF.isBlank()) {
+            spec = spec.and((root, query, cb) ->
+                    cb.like(cb.lower(root.get("itemName")),
+                            "%" + nameF.toLowerCase() + "%"));
+        }
+
+        return checklistRepository.findAll(spec, pageable);
     }
 }

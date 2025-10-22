@@ -5,9 +5,14 @@ import com.example.isp.mapper.ProductMapper;
 import com.example.isp.model.Category;
 import com.example.isp.model.Product;
 import com.example.isp.model.Region;
+import com.example.isp.model.enums.ProductStatus;
 import com.example.isp.service.CloudinaryService;
 import com.example.isp.service.ProductService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
@@ -27,8 +32,12 @@ public class ProductController {
     // ==== List ====
     @GetMapping
     public List<ProductResponse> list() {
-        return productService.list().stream().map(ProductMapper::toResponse).toList();
+        return productService.list().stream()
+                .map(ProductMapper::toResponse)
+                .toList();
     }
+
+
 
     // ==== Get by id ====
     @GetMapping("/{id}")
@@ -68,6 +77,7 @@ public class ProductController {
             @RequestParam(required = false) String productDescription,
             @RequestParam(required = false) Long categoryId,
             @RequestParam(required = false) Long regionId,
+            @RequestParam(required = false) ProductStatus productStatus,
             @RequestParam(value = "file", required = false) MultipartFile file
     ) {
         Product patch = Product.builder()
@@ -78,21 +88,51 @@ public class ProductController {
                 .region(regionId != null ? Region.builder().regionId(regionId).build() : null)
                 .build();
 
+
+        if (productStatus != null) {
+            patch.setProductStatus(productStatus); // AVAILABLE | UNAVAILABLE
+        }
+
         if (file != null && !file.isEmpty()) {
-            String newUrl = cloudinaryService.uploadImage(file, "isp/products");
+            String newUrl = cloudinaryService.uploadImage(file, "isp/products/"); // nên có dấu "/" cuối
             patch.setProductImage(newUrl);
         }
+
         return ProductMapper.toResponse(productService.update(id, patch));
     }
 
     // ==== Delete ====
     @DeleteMapping("/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void delete(@PathVariable Long id) { productService.delete(id); }
+    public void delete(@PathVariable Long id) {
+        productService.delete(id);
+    }
 
     // ==== Search theo tên duy nhất ====
     @GetMapping("/search")
     public List<ProductResponse> search(@RequestParam String q) {
         return productService.searchByName(q).stream().map(ProductMapper::toResponse).toList();
+    }
+
+    // ==== BỘ LỌC vùng–loại–giá
+
+    @GetMapping("/filter")
+    public Page<ProductResponse> filter(
+            @RequestParam(required = false) Long regionId,
+            @RequestParam(required = false) Long categoryId,
+            @RequestParam(required = false) BigDecimal minPrice,
+            @RequestParam(required = false) BigDecimal maxPrice
+    ) {
+        // ===== Thiết lập mặc định ngay trong code =====
+        final int defaultPage = 0;             // luôn bắt đầu từ trang đầu
+        final int defaultSize = 12;            // 12 sản phẩm mỗi trang
+        final String defaultSortField = "productId";  // sắp xếp theo ID
+        final Sort.Direction defaultSortDir = Sort.Direction.DESC; // mới nhất lên trước
+
+        Pageable pageable = PageRequest.of(defaultPage, defaultSize, Sort.by(defaultSortDir, defaultSortField));
+
+        return productService
+                .filter(regionId, categoryId, minPrice, maxPrice, pageable)
+                .map(ProductMapper::toResponse);
     }
 }

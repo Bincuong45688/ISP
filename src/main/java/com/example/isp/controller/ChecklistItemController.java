@@ -1,14 +1,19 @@
 package com.example.isp.controller;
 
-import com.example.isp.config.SecurityRoles;
+import com.example.isp.dto.request.CreateChecklistItemRequest;
+import com.example.isp.dto.request.UpdateChecklistItemRequest;
+import com.example.isp.dto.response.ChecklistItemResponse;
+import com.example.isp.model.Checklist;
 import com.example.isp.model.ChecklistItem;
+import com.example.isp.model.Ritual;
 import com.example.isp.service.ChecklistItemService;
-import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.security.SecurityRequirement;
-import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -16,44 +21,106 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/checklist-items")
 @RequiredArgsConstructor
-@Tag(name = "Checklist Item Management", description = "Quản lý vật phẩm checklist")
 public class ChecklistItemController {
 
-    private final ChecklistItemService service;
+    private final ChecklistItemService checklistItemService;
 
-    // 📌 Public: Lấy toàn bộ item
-    @Operation(summary = "Lấy toàn bộ checklist item")
+    // ==== List tất cả ====
     @GetMapping
-    public ResponseEntity<List<ChecklistItem>> getAll() {
-        return ResponseEntity.ok(service.getAll());
+    public List<ChecklistItemResponse> list() {
+        return checklistItemService.list()
+                .stream()
+                .map(this::toResponse)
+                .toList();
     }
 
-    @Operation(summary = "Lấy checklist item theo ID")
+    // ==== Get by ID ====
     @GetMapping("/{id}")
-    public ResponseEntity<ChecklistItem> getById(@PathVariable Long id) {
-        return ResponseEntity.ok(service.getById(id));
+    public ChecklistItemResponse get(@PathVariable Long id) {
+        return toResponse(checklistItemService.get(id));
     }
 
-    // 🧑‍💼 STAFF: Quản trị CRUD
-    @Operation(summary = "Tạo checklist item", security = @SecurityRequirement(name = "bearerAuth"))
-    @PreAuthorize(SecurityRoles.STAFF)
+    // ==== Create ====
     @PostMapping
-    public ResponseEntity<ChecklistItem> create(@RequestBody ChecklistItem item) {
-        return ResponseEntity.ok(service.create(item));
+    @ResponseStatus(HttpStatus.CREATED)
+    public ChecklistItemResponse create(@Valid @RequestBody CreateChecklistItemRequest req) {
+        ChecklistItem item = ChecklistItem.builder()
+                .ritual(Ritual.builder().ritualId(req.ritualId()).build())
+                .checklist(Checklist.builder().itemId(req.itemId()).build())
+                .quantity(req.quantity())
+                .checkNote(req.checkNote())
+                .build();
+
+        return toResponse(checklistItemService.create(item));
     }
 
-    @Operation(summary = "Cập nhật checklist item", security = @SecurityRequirement(name = "bearerAuth"))
-    @PreAuthorize(SecurityRoles.STAFF)
+    // ==== Update ====
     @PutMapping("/{id}")
-    public ResponseEntity<ChecklistItem> update(@PathVariable Long id, @RequestBody ChecklistItem item) {
-        return ResponseEntity.ok(service.update(id, item));
+    public ChecklistItemResponse update(
+            @PathVariable Long id,
+            @Valid @RequestBody UpdateChecklistItemRequest req) {
+        
+        ChecklistItem patch = ChecklistItem.builder()
+                .ritual(req.ritualId() != null ? Ritual.builder().ritualId(req.ritualId()).build() : null)
+                .checklist(req.itemId() != null ? Checklist.builder().itemId(req.itemId()).build() : null)
+                .quantity(req.quantity())
+                .checkNote(req.checkNote())
+                .build();
+
+        return toResponse(checklistItemService.update(id, patch));
     }
 
-    @Operation(summary = "Xóa checklist item", security = @SecurityRequirement(name = "bearerAuth"))
-    @PreAuthorize(SecurityRoles.STAFF)
+    // ==== Delete ====
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> delete(@PathVariable Long id) {
-        service.delete(id);
-        return ResponseEntity.noContent().build();
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void delete(@PathVariable Long id) {
+        checklistItemService.delete(id);
+    }
+
+    // ==== Get by Ritual ID ====
+    @GetMapping("/by-ritual/{ritualId}")
+    public List<ChecklistItemResponse> getByRitualId(@PathVariable Long ritualId) {
+        return checklistItemService.getByRitualId(ritualId)
+                .stream()
+                .map(this::toResponse)
+                .toList();
+    }
+
+    // ==== Get by Checklist ID ====
+    @GetMapping("/by-checklist/{itemId}")
+    public List<ChecklistItemResponse> getByChecklistId(@PathVariable Long itemId) {
+        return checklistItemService.getByChecklistId(itemId)
+                .stream()
+                .map(this::toResponse)
+                .toList();
+    }
+
+    // ==== Filter theo ritual và checklist với phân trang ====
+    // Gọi: /api/checklist-items/filter?ritualId=1&itemId=2&page=0&size=10&sort=checklistId,desc
+    @GetMapping("/filter")
+    public Page<ChecklistItemResponse> filter(
+            @RequestParam(required = false) Long ritualId,
+            @RequestParam(required = false) Long itemId,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(defaultValue = "checklistId") String sortBy,
+            @RequestParam(defaultValue = "DESC") Sort.Direction direction
+    ) {
+        Pageable pageable = PageRequest.of(page, size, Sort.by(direction, sortBy));
+        return checklistItemService.filter(ritualId, itemId, pageable)
+                .map(this::toResponse);
+    }
+
+    // ==== Helper method ====
+    private ChecklistItemResponse toResponse(ChecklistItem ci) {
+        return new ChecklistItemResponse(
+                ci.getChecklistId(),
+                ci.getRitual() != null ? ci.getRitual().getRitualId() : null,
+                ci.getRitual() != null ? ci.getRitual().getRitualName() : null,
+                ci.getChecklist() != null ? ci.getChecklist().getItemId() : null,
+                ci.getChecklist() != null ? ci.getChecklist().getItemName() : null,
+                ci.getQuantity(),
+                ci.getCheckNote()
+        );
     }
 }

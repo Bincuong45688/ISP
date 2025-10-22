@@ -1,14 +1,16 @@
 package com.example.isp.controller;
 
 import com.example.isp.dto.request.AddToCartRequest;
-import com.example.isp.dto.response.CartItemResponse;
+import com.example.isp.dto.request.AdjustCartItemRequest;
 import com.example.isp.dto.response.CartResponse;
-import com.example.isp.model.Cart;
-import com.example.isp.repository.CartItemRepository;
+import com.example.isp.repository.CustomerRepository;
 import com.example.isp.service.CartService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -17,57 +19,52 @@ import org.springframework.web.bind.annotation.*;
 public class CartController {
 
     private final CartService cartService;
-    private final CartItemRepository cartItemRepository;
+    private final CustomerRepository customerRepository;
 
-    @GetMapping("/{customerId}")
-    public CartResponse getOpenCart(@PathVariable Long customerId) {
-        return toCartResponse(cartService.getOpenCart(customerId));
+    // === Helper: Lấy customerId từ JWT token ===
+    private Long currentCustomerId() {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        if (auth == null || auth.getName() == null) {
+            throw new IllegalStateException("Không xác định được người dùng từ token.");
+        }
+
+        String username = auth.getName();
+        return customerRepository.findIdByAccountUsername(username)
+                .orElseThrow(() -> new IllegalStateException("Không tìm thấy customerId cho username: " + username));
     }
 
-    @PostMapping("/{customerId}/add")
-    public CartResponse add(
-            @PathVariable Long customerId,
-            @Valid @RequestBody AddToCartRequest req) {
-        Cart cart = cartService.addItem(customerId, req.getProductId(), req.getQuantity());
-        return toCartResponse(cart);
+    // === Lấy giỏ hàng của khách hàng đang đăng nhập ===
+    @GetMapping
+    public CartResponse getCart() {
+        return cartService.getCart(currentCustomerId());
     }
 
-    @PostMapping("/{customerId}/remove")
-    public CartResponse remove(
-            @PathVariable Long customerId,
-            @Valid @RequestBody AddToCartRequest req) {
-        Cart cart = cartService.removeItem(customerId, req.getProductId(), req.getQuantity());
-        return toCartResponse(cart);
+    // === Thêm sản phẩm vào giỏ ===
+    @PostMapping("/items")
+    @ResponseStatus(HttpStatus.CREATED)
+    public CartResponse addItem(@Valid @RequestBody AddToCartRequest req) {
+        return cartService.addItem(currentCustomerId(), req);
     }
 
-    @PostMapping("/{customerId}/clear")
-    public CartResponse clear(@PathVariable Long customerId) {
-        return toCartResponse(cartService.clear(customerId));
+    // === Xóa 1 sản phẩm khỏi giỏ ===
+    @PostMapping("/items/remove")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void removeItem(@RequestParam Long productId) {
+        cartService.removeItem(currentCustomerId(), productId);
     }
 
-    @PostMapping("/{customerId}/checkout")
+    // === Giảm 1 sản phẩm trong giỏ ===
+    @PostMapping("/items/decrease")
     @ResponseStatus(HttpStatus.OK)
-    public CartResponse checkout(@PathVariable Long customerId) {
-        return toCartResponse(cartService.checkout(customerId));
+    public CartResponse decreaseItem(@RequestParam Long productId) {
+        return cartService.decreaseItem(currentCustomerId(), productId, 1);
     }
 
-    private CartResponse toCartResponse(Cart cart) {
-        var items = cartItemRepository.findByCart_CartId(cart.getCartId())
-                .stream()
-                .map(ci -> CartItemResponse.builder()
-                        .productId(ci.getProduct().getProductId())
-                        .productName(ci.getProduct().getProductName())
-                        .quantity(ci.getQuantity())
-                        .selected(ci.getSelected())
-                        .build())
-                .toList();
 
-        return CartResponse.builder()
-                .cartId(cart.getCartId())
-                .cartStatus(cart.getCartStatus())
-                .customerId(cart.getCustomer().getCustomerId())
-                .customerName(cart.getCustomer().getCustomerName())
-                .items(items)
-                .build();
+    // === Xóa toàn bộ giỏ ===
+    @PostMapping("/clear")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void clearCart() {
+        cartService.clearCart(currentCustomerId());
     }
 }

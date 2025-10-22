@@ -1,5 +1,7 @@
 package com.example.isp.dto.response;
 
+import com.example.isp.model.enums.ProductStatus;
+
 import java.math.BigDecimal;
 
 public record ProductResponse(
@@ -12,5 +14,6 @@ public record ProductResponse(
         String categoryName,
         Long regionId,
         String regionName,
-        String status
+        ProductStatus productStatus,
+        boolean available
 ) {}
