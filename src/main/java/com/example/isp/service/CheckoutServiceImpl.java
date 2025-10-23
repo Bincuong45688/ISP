@@ -4,6 +4,7 @@ import com.example.isp.dto.request.CheckoutRequest;
 import com.example.isp.dto.response.CheckoutResponse;
 import com.example.isp.model.*;
 import com.example.isp.model.enums.CartStatus;
+import com.example.isp.model.enums.OrderStatus;
 import com.example.isp.model.enums.ProductStatus;
 import com.example.isp.repository.*;
 import jakarta.transaction.Transactional;
@@ -77,7 +78,7 @@ public class CheckoutServiceImpl implements  CheckoutService{
                 .paymentMethod(request.getPaymentMethod())
                 .note(request.getNote())
                 .totalAmount(total)
-                .status("PENDING")
+                .status(OrderStatus.PENDING)
                 .createdAt(LocalDateTime.now())
                 .build();
         orderRepository.save(order);
@@ -121,7 +122,7 @@ public class CheckoutServiceImpl implements  CheckoutService{
                 .address(order.getAddress())
                 .paymentMethod(order.getPaymentMethod())
                 .totalAmount(order.getTotalAmount())
-                .status(order.getStatus())
+                .status(order.getStatus().name())
                 .createdAt(order.getCreatedAt())
                 .message("Checkout successful")
                 .build();

@@ -1,5 +1,6 @@
 package com.example.isp.model;
 
+import com.example.isp.model.enums.OrderStatus;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -30,7 +31,10 @@ public class Order {
     @Column(precision = 15, scale = 2)
     private BigDecimal totalAmount;
 
-    private String status; // PENDING, CONFIRMED, DELIVERED, CANCELED
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private OrderStatus status; // PENDING, CONFIRMED, DELIVERED, CANCELED
+
     private LocalDateTime createdAt;
 
     @Column(name = "note")
