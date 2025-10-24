@@ -4,6 +4,8 @@ import jakarta.persistence.*;
 import lombok.*;
 
 import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @Table(name = "Ritual")
@@ -36,4 +38,8 @@ public class Ritual {
 
     @Column(name = "image_url", columnDefinition = "TEXT")
     private String imageUrl;
+
+    // 👉 Thêm mối quan hệ 1-nhiều tới Checklist
+    @OneToMany(mappedBy = "ritual", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<Checklist> checklists = new ArrayList<>();
 }

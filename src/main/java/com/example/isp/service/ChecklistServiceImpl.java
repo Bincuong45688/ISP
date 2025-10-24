@@ -21,6 +21,8 @@ public class ChecklistServiceImpl implements ChecklistService {
 
     @Override
     public Checklist create(Checklist checklist) {
+        // Với cascade = ALL và orphanRemoval = true từ phía Ritual,
+        // chỉ cần save checklist là đủ, JPA sẽ tự động quản lý mối quan hệ
         Checklist saved = checklistRepository.save(checklist);
         // Reload to ensure relations are loaded
         return checklistRepository.findByIdWithRelations(saved.getChecklistId())
@@ -32,7 +34,9 @@ public class ChecklistServiceImpl implements ChecklistService {
         Checklist existing = checklistRepository.findByIdWithRelations(id)
                 .orElseThrow(() -> new EntityNotFoundException("Checklist not found: " + id));
 
-        if (checklist.getRitual() != null) {
+        // Nếu thay đổi ritual, cần xử lý orphanRemoval
+        if (checklist.getRitual() != null && 
+            !checklist.getRitual().equals(existing.getRitual())) {
             existing.setRitual(checklist.getRitual());
         }
         if (checklist.getItem() != null) {

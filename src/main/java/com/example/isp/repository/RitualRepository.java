@@ -32,6 +32,11 @@ public interface RitualRepository extends JpaRepository<Ritual, Long>, JpaSpecif
     @Query("select r from Ritual r where r.ritualId = :id")
     Optional<Ritual> findByIdWithRegion(@Param("id") Long id);
 
+    // Lấy 1 ritual + kèm region và checklists (dùng khi cần xem chi tiết đầy đủ)
+    @EntityGraph(attributePaths = {"region", "checklists", "checklists.item"})
+    @Query("select r from Ritual r where r.ritualId = :id")
+    Optional<Ritual> findByIdWithRegionAndChecklists(@Param("id") Long id);
+
     // Search theo tên + kèm region
     @EntityGraph(attributePaths = {"region"})
     @Query("""
