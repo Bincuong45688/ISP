@@ -128,9 +128,17 @@ public class CustomerServiceImpl implements CustomerService {
 
     @Override
     public VerifyEmailResponse sendResetOtp(String email) {
-        Account account = accountRepository.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("Không tìm thấy tài khoản với email này."));
+        Optional<Account> accountOpt = accountRepository.findByEmail(email);
 
+        // Luôn trả cùng 1 message, để tránh lộ email tồn tại hay không
+        String genericMessage = "Nếu email tồn tại, mã OTP đã được gửi. Vui lòng kiểm tra email của bạn.";
+
+        if (accountOpt.isEmpty()) {
+            // Không tiết lộ rằng email không tồn tại
+            return new VerifyEmailResponse(genericMessage, "success");
+        }
+
+        Account account = accountOpt.get();
         String otp = emailUtil.generateOtp();
         account.setOtpCode(otp);
         account.setOtpExpiredAt(LocalDateTime.now().plusMinutes(5));
@@ -138,11 +146,13 @@ public class CustomerServiceImpl implements CustomerService {
 
         try {
             emailUtil.sendVerificationEmail(email, otp);
-            return new VerifyEmailResponse("OTP đặt lại mật khẩu đã được gửi đến email của bạn.", "success");
         } catch (IOException e) {
-            return new VerifyEmailResponse("Không thể gửi OTP. Vui lòng thử lại sau.", "error");
+            System.err.println("Gửi email OTP thất bại: " + e.getMessage());
         }
+
+        return new VerifyEmailResponse(genericMessage, "success");
     }
+
 
 
     @Override
