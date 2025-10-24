@@ -37,6 +37,13 @@ public interface RitualService {
     Ritual get(Long id);
 
     /**
+     * Lấy một nghi lễ theo ID kèm theo danh sách checklists.
+     * @param id ID của nghi lễ
+     * @return Ritual với checklists
+     */
+    Ritual getWithChecklists(Long id);
+
+    /**
      * Xóa nghi lễ theo ID.
      * @param id ID của nghi lễ cần xóa
      */

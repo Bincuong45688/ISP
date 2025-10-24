@@ -74,11 +74,21 @@ public class RitualServiceImpl implements RitualService {
     }
 
     @Override
+    @Transactional(readOnly = true)
+    public Ritual getWithChecklists(Long id) {
+        return ritualRepository.findByIdWithRegionAndChecklists(id)
+                .orElseThrow(() -> new EntityNotFoundException("Ritual not found: " + id));
+    }
+
+    @Override
     public void delete(Long id) {
-        if (!ritualRepository.existsById(id)) {
-            throw new EntityNotFoundException("Ritual not found: " + id);
-        }
-        ritualRepository.deleteById(id);
+        // Load ritual với checklists để cascade delete hoạt động đúng
+        Ritual ritual = ritualRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Ritual not found: " + id));
+        
+        // Với cascade = ALL và orphanRemoval = true, 
+        // tất cả checklists sẽ tự động bị xóa khi xóa ritual
+        ritualRepository.delete(ritual);
     }
 
     @Override

@@ -2,6 +2,8 @@ package com.example.isp.controller;
 
 import com.example.isp.dto.request.CreateRitualRequest;
 import com.example.isp.dto.request.UpdateRitualRequest;
+import com.example.isp.dto.response.ChecklistResponse;
+import com.example.isp.dto.response.RitualDetailResponse;
 import com.example.isp.dto.response.RitualResponse;
 import com.example.isp.model.Region;
 import com.example.isp.model.Ritual;
@@ -42,6 +44,12 @@ public class RitualController {
     @GetMapping("/{id}")
     public RitualResponse get(@PathVariable Long id) {
         return toResponse(ritualService.get(id));
+    }
+
+    // ==== Get by ID với Checklists ====
+    @GetMapping("/{id}/detail")
+    public RitualDetailResponse getDetail(@PathVariable Long id) {
+        return toDetailResponse(ritualService.getWithChecklists(id));
     }
 
     // ==== Create (multipart/form-data với file upload) ====
@@ -147,6 +155,34 @@ public class RitualController {
                 r.getDescription(),
                 r.getMeaning(),
                 r.getImageUrl()
+        );
+    }
+
+    // ==== Helper method để convert Entity -> DetailResponse với Checklists ====
+    private RitualDetailResponse toDetailResponse(Ritual r) {
+        List<ChecklistResponse> checklistResponses = r.getChecklists().stream()
+                .map(c -> new ChecklistResponse(
+                        c.getChecklistId(),
+                        c.getRitual() != null ? c.getRitual().getRitualId() : null,
+                        c.getRitual() != null ? c.getRitual().getRitualName() : null,
+                        c.getItem() != null ? c.getItem().getItemId() : null,
+                        c.getItem() != null ? c.getItem().getItemName() : null,
+                        c.getQuantity(),
+                        c.getCheckNote()
+                ))
+                .toList();
+
+        return new RitualDetailResponse(
+                r.getRitualId(),
+                r.getRitualName(),
+                r.getDateLunar(),
+                r.getRegion() != null ? r.getRegion().getRegionId() : null,
+                r.getRegion() != null ? r.getRegion().getRegionName() : null,
+                r.getDateSolar(),
+                r.getDescription(),
+                r.getMeaning(),
+                r.getImageUrl(),
+                checklistResponses
         );
     }
 }
