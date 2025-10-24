@@ -20,11 +20,20 @@ public class Order {
     @Column(name = "order_id")
     private Long orderId;
 
+    // Liên kết với customer
     @ManyToOne
     @JoinColumn(name = "customer_id", nullable = false)
     private Customer customer;
 
+    // Liên kết với shipper (người giao)
+    @ManyToOne
+    @JoinColumn(name = "shipper_id")
+    private Account shipper; // Role = SHIPPER
+
+    @Column(nullable = false)
     private String address;
+
+    @Column(nullable = false)
     private String phone;
     private String paymentMethod; // COD, BANK_TRANSFER,...
 
