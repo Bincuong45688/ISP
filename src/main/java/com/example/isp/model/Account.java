@@ -38,5 +38,4 @@ public class Account {
 
     @Column(name = "otp_expired_at")
     private LocalDateTime otpExpiredAt;
-
 }

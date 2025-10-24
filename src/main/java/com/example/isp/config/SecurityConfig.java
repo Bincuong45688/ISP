@@ -86,6 +86,19 @@ public class SecurityConfig {
                                 "/api/cart/checkout"           // checkout
                         ).hasAnyAuthority("ROLE_CUSTOMER","CUSTOMER")
 
+                        // ====== ORDER APIs ======
+                        // CUSTOMER (đặt, xem, hủy đơn)
+                        .requestMatchers("/api/customer/orders/**")
+                        .hasAnyAuthority("ROLE_CUSTOMER", "CUSTOMER")
+
+                        // STAFF (xác nhận, gán shipper, hủy)
+                        .requestMatchers("/api/staff/orders/**")
+                        .hasAnyAuthority("ROLE_STAFF", "STAFF")
+
+                        // SHIPPER (xem và hoàn tất đơn)
+                        .requestMatchers("/api/shipper/orders/**")
+                        .hasAnyAuthority("ROLE_SHIPPER", "SHIPPER")
+
                         .anyRequest().authenticated()
                 )
                 .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class)
