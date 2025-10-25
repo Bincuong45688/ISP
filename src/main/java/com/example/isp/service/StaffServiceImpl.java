@@ -1,5 +1,6 @@
 package com.example.isp.service;
 
+import com.example.isp.dto.request.CreateShipperRequest;
 import com.example.isp.dto.request.LoginRequest;
 import com.example.isp.dto.request.RegisterStaffRequest;
 import com.example.isp.dto.request.UpdateStaffProfileRequest;
@@ -7,9 +8,11 @@ import com.example.isp.dto.response.AuthResponse;
 import com.example.isp.dto.response.StaffResponse;
 import com.example.isp.mapper.StaffMapper;
 import com.example.isp.model.Account;
+import com.example.isp.model.Shipper;
 import com.example.isp.model.Staff;
 import com.example.isp.model.enums.Role;
 import com.example.isp.repository.AccountRepository;
+import com.example.isp.repository.ShipperRepository;
 import com.example.isp.repository.StaffRepository;
 import com.example.isp.security.JwtService;
 import lombok.RequiredArgsConstructor;
@@ -26,6 +29,7 @@ public class StaffServiceImpl implements StaffService {
 
     private final StaffRepository staffRepo;
     private final AccountRepository accountRepo;
+    private final ShipperRepository shipperRepo;
     private final StaffMapper staffMapper;
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
@@ -57,7 +61,9 @@ public class StaffServiceImpl implements StaffService {
 
         String token = jwtService.generateToken(principal);
         return AuthResponse.builder()
-                .token(token)
+                .username(acc.getUsername())
+                .email(acc.getEmail())
+                .role(acc.getRole().name())
                 .build();
     }
 
@@ -82,6 +88,8 @@ public class StaffServiceImpl implements StaffService {
         String token = jwtService.generateToken(principal);
         return AuthResponse.builder()
                 .token(token)
+                .username(acc.getUsername())
+                .email(acc.getEmail())
                 .role(acc.getRole().name())
                 .build();
     }
@@ -107,5 +115,32 @@ public class StaffServiceImpl implements StaffService {
             acc.setPassword(passwordEncoder.encode(req.getPassword()));
         }
         return staffMapper.toResponse(staff);
+    }
+
+    @Override
+    public void createShipper(CreateShipperRequest req) {
+        // 1. Check trùng username
+        if(accountRepo.existsByUsername(req.getUsername())) {
+            throw  new IllegalArgumentException("Username already existed");
+        }
+
+        // 2. Tạo account
+        Account account = Account.builder()
+                .username(req.getUsername())
+                .password(passwordEncoder.encode(req.getPassword()))
+                .email(req.getEmail())
+                .phone(req.getPhone())
+                .role(Role.SHIPPER)
+                .status("ACTIVE")
+                .build();
+        accountRepo.save(account);
+
+        // 3. Tạo thông tin shipper gắn với account
+        Shipper shipper = Shipper.builder()
+                .shipperName(req.getShipperName())
+                .gender(req.getGender())
+                .account(account)
+                .build();
+        shipperRepo.save(shipper);
     }
 }
