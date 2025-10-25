@@ -4,10 +4,11 @@ import com.example.isp.dto.response.OrderResponse;
 import com.example.isp.mapper.OrderMapper;
 import com.example.isp.model.Account;
 import com.example.isp.model.Order;
+import com.example.isp.model.Shipper;
 import com.example.isp.model.enums.OrderStatus;
 import com.example.isp.model.enums.Role;
-import com.example.isp.repository.AccountRepository;
 import com.example.isp.repository.OrderRepository;
+import com.example.isp.repository.ShipperRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -18,7 +19,7 @@ import java.util.List;
 public class StaffOrderService {
 
     private final OrderRepository orderRepository;
-    private final AccountRepository accountRepository;
+    private final ShipperRepository shipperRepository;
     private final OrderMapper orderMapper;
 
     // Xem tất cả đơn hàng trong hệ thống
@@ -45,21 +46,27 @@ public class StaffOrderService {
 
     // Gán một shipper cụ thể cho đơn hàng và chuyển trạng thái sang SHIPPING.
     public void assignShipper(Long orderId, Long shipperId) {
-
+        // 1. Tìm Order
         Order order = orderRepository.findById(orderId)
                 .orElseThrow(() -> new RuntimeException("Order not found"));
 
-        Account shipper = accountRepository.findById(shipperId)
+        // 2. Tìm Shipper theo ID
+        Shipper shipper = shipperRepository.findById(shipperId)
                 .orElseThrow(() -> new RuntimeException("Shipper not found"));
 
-        if(shipper.getRole() != Role.SHIPPER){
+        // 3. Lấy account tương ứng với shipper
+        Account shipperAccount = shipper.getAccount();
+
+        if (shipperAccount == null || shipperAccount.getRole() != Role.SHIPPER) {
             throw new RuntimeException("Account is not a shipper");
         }
 
-        order.setShipper(shipper);
-        order.setStatus(OrderStatus.SHIPPING);
+        // 4. Gán vào order
+        order.setShipper(shipperAccount);
+        order.setStatus(OrderStatus.CONFIRMED);
         orderRepository.save(order);
     }
+
 
 
 }

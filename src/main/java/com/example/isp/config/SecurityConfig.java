@@ -49,7 +49,8 @@ public class SecurityConfig {
                                 "/api/customer/forgot-password",
                                 "/api/customer/verify-reset-otp",
                                 "/api/customer/reset-password",
-                                "/api/staff/login", "/api/staff/register"
+                                "/api/staff/login", "/api/staff/register",
+                                "/api/shipper/login"
                         ).permitAll()
 
                         // Read public
@@ -76,6 +77,9 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.POST, "/api/uploads/**").hasAnyAuthority("ROLE_STAFF","STAFF")
                         .requestMatchers(HttpMethod.DELETE, "/api/uploads/**").hasAnyAuthority("ROLE_STAFF","STAFF")
 
+                        // Create account Shipper by Staff
+                        .requestMatchers(HttpMethod.POST, "/api/staff/shippers/**")
+                        .hasAnyAuthority("ROLE_STAFF","STAFF")
 
                         // ===== Cart: CUSTOMER =====
                         .requestMatchers(HttpMethod.GET,
