@@ -16,6 +16,10 @@ public class ChecklistItem {
     @Column(name = "item_name", nullable = false, length = 255)
     private String itemName;
 
-    @Column(name = "unit", length = 255)
-    private String unit;
+    @Enumerated(EnumType.STRING)
+    @Column(name = "unit", length = 50)
+    private Unit unit;
+
+    @Column(name = "stock_quantity")
+    private Integer stockQuantity = 0;
 }

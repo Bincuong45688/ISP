@@ -35,6 +35,9 @@ public class ChecklistItemServiceImpl implements ChecklistItemService {
         if (item.getUnit() != null) {
             existing.setUnit(item.getUnit());
         }
+        if (item.getStockQuantity() != null) {
+            existing.setStockQuantity(item.getStockQuantity());
+        }
 
         return checklistItemRepository.save(existing);
     }

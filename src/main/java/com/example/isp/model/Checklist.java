@@ -26,7 +26,8 @@ public class Checklist {
 
     @Column(name = "check_note", length = 255)
     private String checkNote;
-    
-    @Column(name = "Co_Luong", length = 255)
-    private  String coLuong;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "status", length = 20)
+    private ChecklistStatus status;
 }

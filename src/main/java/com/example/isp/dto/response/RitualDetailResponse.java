@@ -7,7 +7,7 @@ import java.util.List;
  * Response DTO cho Ritual kèm theo danh sách Checklists.
  * Dùng khi cần xem chi tiết đầy đủ của một nghi lễ.
  */
-public record   RitualDetailResponse(
+public record RitualDetailResponse(
         Long ritualId,
         String ritualName,
         String dateLunar,

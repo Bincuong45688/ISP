@@ -45,6 +45,7 @@ public class ChecklistItemController {
         ChecklistItem item = ChecklistItem.builder()
                 .itemName(request.itemName())
                 .unit(request.unit())
+                .stockQuantity(request.stockQuantity() != null ? request.stockQuantity() : 0)
                 .build();
 
         return toResponse(checklistItemService.create(item));
@@ -59,6 +60,7 @@ public class ChecklistItemController {
         ChecklistItem patch = ChecklistItem.builder()
                 .itemName(request.itemName())
                 .unit(request.unit())
+                .stockQuantity(request.stockQuantity())
                 .build();
 
         return toResponse(checklistItemService.update(id, patch));
@@ -100,7 +102,8 @@ public class ChecklistItemController {
         return new ChecklistItemResponse(
                 item.getItemId(),
                 item.getItemName(),
-                item.getUnit()
+                item.getUnit(),
+                item.getStockQuantity()
         );
     }
 }
