@@ -119,6 +119,7 @@ public class ChecklistController {
                 c.getRitual() != null ? c.getRitual().getRitualName() : null,
                 c.getItem() != null ? c.getItem().getItemId() : null,
                 c.getItem() != null ? c.getItem().getItemName() : null,
+                c.getItem() != null ? c.getItem().getUnit() : null,
                 c.getQuantity(),
                 c.getCheckNote()
         );

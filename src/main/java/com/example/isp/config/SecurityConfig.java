@@ -81,6 +81,9 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.POST, "/api/staff/shippers/**")
                         .hasAnyAuthority("ROLE_STAFF","STAFF")
 
+                        // ===== User Checklists: CUSTOMER có toàn quyền =====
+                        .requestMatchers("/api/user-checklists/**").hasAnyAuthority("ROLE_CUSTOMER","CUSTOMER")
+
                         // ===== Cart: CUSTOMER =====
                         .requestMatchers(HttpMethod.GET,
                                 "/api/cart"                    // GET giỏ của chính mình
