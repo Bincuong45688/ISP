@@ -106,6 +106,10 @@ public class SecurityConfig {
                         .requestMatchers("/api/shipper/orders/**")
                         .hasAnyAuthority("ROLE_SHIPPER", "SHIPPER")
 
+                        // ===== PAYOS =====
+                        .requestMatchers(HttpMethod.POST, "/webhooks/payos").permitAll()
+                        .requestMatchers("/api/payments/**").hasAnyAuthority("ROLE_CUSTOMER", "CUSTOMER")
+
                         .anyRequest().authenticated()
                 )
                 .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class)
