@@ -1,4 +1,4 @@
-package com.example.isp.model;
+package com.example.isp.model.enums;
 
 public enum Unit {
     CHEN("Chén"),

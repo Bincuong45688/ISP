@@ -1,5 +1,6 @@
 package com.example.isp.model;
 
+import com.example.isp.model.enums.ChecklistStatus;
 import jakarta.persistence.*;
 import lombok.*;
 
