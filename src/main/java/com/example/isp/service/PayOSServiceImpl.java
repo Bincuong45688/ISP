@@ -42,8 +42,8 @@ public class PayOSServiceImpl implements PayOSService {
                     .orderCode(orderId)
                     .amount(amountVnd)
                     .description("Thanh toán đơn hàng #" + order.getOrderId())
-                    .returnUrl("https://isp-frontend.vercel.app/checkout/success") // URL frontend khi thanh toán thành công
-                    .cancelUrl("https://isp-frontend.vercel.app/checkout/cancel")  // URL frontend khi hủy
+                    .returnUrl("http://localhost:3000/success") // URL frontend khi thanh toán thành công
+                    .cancelUrl("http://localhost:3000/cancel")  // URL frontend khi hủy
                     .build();
 
             CheckoutResponseData response = payOS.createPaymentLink(data);
