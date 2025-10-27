@@ -1,5 +1,6 @@
 package com.example.isp.model;
 
+import com.example.isp.model.enums.Unit;
 import jakarta.persistence.*;
 import lombok.*;
 

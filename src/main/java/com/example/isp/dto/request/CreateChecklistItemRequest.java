@@ -1,6 +1,6 @@
 package com.example.isp.dto.request;
 
-import com.example.isp.model.Unit;
+import com.example.isp.model.enums.Unit;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;

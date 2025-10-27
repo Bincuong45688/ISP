@@ -1,6 +1,6 @@
 package com.example.isp.dto.request;
 
-import com.example.isp.model.Unit;
+import com.example.isp.model.enums.Unit;
 import jakarta.validation.constraints.Size;
 
 public record UpdateChecklistItemRequest(
