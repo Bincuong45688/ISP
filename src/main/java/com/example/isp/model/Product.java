@@ -5,6 +5,8 @@ import com.example.isp.model.enums.ProductStatus;
 import jakarta.persistence.*;
 import lombok.*;
 import java.math.BigDecimal;
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @Table(name = "product")
@@ -38,4 +40,14 @@ public class Product {
 
     @Enumerated(EnumType.STRING)
     private ProductStatus status;
+
+    @OneToMany(mappedBy = "product", cascade = CascadeType.ALL, orphanRemoval = true)
+    @Builder.Default
+    private List<ProductDetail> productDetails = new ArrayList<>();
+
+    public void addDetail(ProductDetail d) {
+        productDetails.add(d);
+        d.setProduct(this);                 // GẮN 2 chiều
+    }
+
 }

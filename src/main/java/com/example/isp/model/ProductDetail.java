@@ -3,6 +3,9 @@ package com.example.isp.model;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.util.ArrayList;
+import java.util.List;
+
 @Entity
 @Table(name = "ProductDetail")
 @Getter @Setter @NoArgsConstructor @AllArgsConstructor @Builder
@@ -18,10 +21,12 @@ public class ProductDetail {
     @JoinColumn(name = "product_id", nullable = false)
     private Product product;
 
-    // Tạm thời chưa có bảng CheclListItem -> giữ item_id là cột số
-    @Column(name = "item_id", nullable = false)
-    private Integer itemId;
+    // FK -> CheckList(checklist_id)
+    // ProductDetail.java
+    @OneToMany(mappedBy = "productDetail",
+            cascade = CascadeType.ALL,
+            orphanRemoval = true)
+    @Builder.Default
+    private List<Checklist> checklists = new ArrayList<>();
 
-    @Column(name = "proDetail_quantity", nullable = false)
-    private Integer proDetailQuantity;
 }

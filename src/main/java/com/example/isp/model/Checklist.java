@@ -18,9 +18,13 @@ public class Checklist {
     @JoinColumn(name = "ritual_id", foreignKey = @ForeignKey(name = "fk_checklist_ritual"))
     private Ritual ritual;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "item_id", foreignKey = @ForeignKey(name = "fk_checklist_item"))
     private ChecklistItem item;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "product_detail_id", foreignKey = @ForeignKey(name = "fk_checklist_product_detail"))
+    private ProductDetail productDetail;
 
     @Column(name = "quantity")
     private Integer quantity;

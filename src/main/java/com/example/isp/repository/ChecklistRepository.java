@@ -41,4 +41,9 @@ public interface ChecklistRepository extends JpaRepository<Checklist, Long>, Jpa
     @EntityGraph(attributePaths = {"ritual", "item"})
     @Query("select c from Checklist c where c.item.itemId = :itemId")
     List<Checklist> findByItemId(@Param("itemId") Long itemId);
+
+
+    List<Checklist> findByProductDetail_Product_ProductId(Long productId);
+
+
 }

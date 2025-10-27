@@ -4,18 +4,14 @@ import com.example.isp.dto.response.OrderDetailResponse;
 import com.example.isp.dto.response.OrderItemResponse;
 import com.example.isp.dto.response.OrderResponse;
 import com.example.isp.mapper.OrderMapper;
-import com.example.isp.model.Account;
-import com.example.isp.model.Customer;
-import com.example.isp.model.Order;
+import com.example.isp.model.*;
 import com.example.isp.model.enums.OrderStatus;
 import com.example.isp.model.enums.Role;
-import com.example.isp.repository.AccountRepository;
-import com.example.isp.repository.CustomerRepository;
-import com.example.isp.repository.OrderDetailRepository;
-import com.example.isp.repository.OrderRepository;
+import com.example.isp.repository.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.util.List;
@@ -28,6 +24,8 @@ public class OrderServiceImpl implements  OrderService {
     private final CustomerRepository customerRepository;
     private final OrderRepository orderRepository;
     private final OrderDetailRepository orderDetailRepository;
+    private final ChecklistRepository checklistRepository;
+    private final ChecklistItemRepository checklistItemRepository;
     private final OrderMapper orderMapper;
 
     @Override
@@ -88,6 +86,9 @@ public class OrderServiceImpl implements  OrderService {
         boolean isCustomerOwner = order.getCustomer().getAccount().getUsername().equals(username);
 
         if(role == Role.STAFF || (role == Role.CUSTOMER && isCustomerOwner)) {
+
+            restoreStockAfterCancel(order);
+
             order.setStatus(OrderStatus.CANCELLED);
             orderRepository.save(order);
         } else {
@@ -111,7 +112,31 @@ public class OrderServiceImpl implements  OrderService {
         if(order.getStatus() == OrderStatus.SHIPPING || order.getStatus() == OrderStatus.COMPLETED) {
             throw new IllegalStateException("Cannot cancel an order in progress or completed");
         }
+
+        restoreStockAfterCancel(order);
         order.setStatus(OrderStatus.CANCELLED);
         orderRepository.save(order);
+    }
+
+    // Hoàn lại kho nếu đơn hàng bị huỷ
+    @Transactional
+    public void restoreStockAfterCancel(Order order) {
+        List<OrderDetail> details = orderDetailRepository.findByOrder(order);
+
+        for (OrderDetail detail : details) {
+            Product product = detail.getProduct();
+            int productQuantity = detail.getQuantity();
+
+            // Tìm checklist theo product
+            List<Checklist> checklists =
+                    checklistRepository.findByProductDetail_Product_ProductId(product.getProductId());
+
+            for (Checklist checklist : checklists) {
+                ChecklistItem item = checklist.getItem();
+                int restoreQty = checklist.getQuantity() * productQuantity;
+                item.setStockQuantity(item.getStockQuantity() + restoreQty);
+                checklistItemRepository.save(item);
+            }
+        }
     }
 }

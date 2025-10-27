@@ -27,104 +27,128 @@ public class CheckoutServiceImpl implements  CheckoutService{
     private final ProductRepository productRepository;
     private final OrderRepository orderRepository;
     private final OrderDetailRepository orderDetailRepository;
+    private final ChecklistRepository checklistRepository;
+    private final ChecklistItemRepository checklistItemRepository;
 
     @Override
     @Transactional
     public CheckoutResponse checkout(CheckoutRequest request) {
-        // 1. Lấy username từ token (người dùng đang đăng nhập)
+
         String username = SecurityContextHolder.getContext().getAuthentication().getName();
-
-        // 2. Tìm Account tương ứng
         Account account = accountRepository.findByUsername(username)
-                .orElseThrow(() -> new RuntimeException("Account not found"));
+                .orElseThrow(() -> new RuntimeException("Tài khoản không tồn tại"));
 
-        // 3. Tìm Customer dựa trên Account
         Customer customer = customerRepository.findByAccount(account)
-                .orElseThrow(() -> new RuntimeException("Customer not found"));
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy khách hàng"));
 
-        // 4. Tìm giỏ hàng ACTIVE của Customer
         Cart cart = cartRepository.findByCustomerAndCartStatus(customer, CartStatus.OPEN)
-                .orElseThrow(() -> new RuntimeException("No active cart found for this customer"));
+                .orElseThrow(() -> new RuntimeException("Không có giỏ hàng hoạt động"));
 
-        // 5. Lấy các item được chọn để checkout
-        List<CartItem> selectedItems = cart.getCartItems().stream()
-                .filter(CartItem::getSelected)
-                .toList();
-        if(selectedItems.isEmpty()){
-            throw new RuntimeException("No items selected for checkout");
+        List<CartItem> cartItems = cartItemRepository.findByCart(cart);
+
+        if (cartItems.isEmpty()) {
+            throw new RuntimeException("Giỏ hàng rỗng");
         }
-
-        // 6. Kiểm tra tình trạng sản phẩm
-        BigDecimal total = BigDecimal.ZERO;
-        for(CartItem item : selectedItems){
+        // STEP 1: Kiểm tra tồn kho trước khi tạo đơn hàng
+        for (CartItem item : cartItems) {
             Product product = item.getProduct();
 
             if(product.getStatus() != ProductStatus.AVAILABLE){
-                throw new RuntimeException("Product " + product.getProductName() + " is currently unavailable");
+                throw new RuntimeException("Sản phẩm" + product.getProductName() + "hiện không thể mua");
             }
-            BigDecimal lineTotal = product.getPrice()
-                    .multiply(BigDecimal.valueOf(item.getQuantity()));
-
-            total = total.add(lineTotal);
+            
+            checkStockAvailable(product, item.getQuantity());
         }
 
-        // 7. Tạo Order mới
-        Order order = Order.builder()
-                .customer(customer)
-                .receiverName(request.getFullName())
-                .receiverEmail(request.getEmail())
-                .phone(request.getPhone() != null ? request.getPhone() : account.getPhone())
-                .address(request.getAddress() != null ? request.getAddress() : customer.getAddress())
-                .paymentMethod(request.getPaymentMethod())
-                .note(request.getNote())
-                .totalAmount(total)
-                .status(OrderStatus.PENDING)
-                .createdAt(LocalDateTime.now())
-                .build();
-        orderRepository.save(order);
+        // STEP 2: Tạo đơn hàng
+        Order order = new Order();
+        order.setCustomer(customer);
+        order.setAddress(request.getAddress());
+        order.setPhone(request.getPhone());
+        order.setReceiverName(request.getFullName());
+        order.setReceiverEmail(request.getEmail());
+        order.setNote(request.getNote());
+        order.setPaymentMethod(request.getPaymentMethod()); // <— thêm dòng này
+        order.setCreatedAt(LocalDateTime.now());
+        order.setStatus(OrderStatus.PENDING);
+        order.setTotalAmount(BigDecimal.ZERO);
 
-        // 8. Tạo OrderDetail cho từng CartItem đã chọn
-        for(CartItem item : selectedItems){
+        order = orderRepository.save(order);
+
+        BigDecimal totalAmount = BigDecimal.ZERO;
+        for (CartItem item : cartItems) {
             Product product = item.getProduct();
 
-            BigDecimal unitPrice = product.getPrice();
-            BigDecimal totalPrice = unitPrice.multiply(BigDecimal.valueOf(item.getQuantity()));
+            OrderDetail detail = new OrderDetail();
+            detail.setOrder(order);
+            detail.setProduct(product);
+            detail.setQuantity(item.getQuantity());
+            detail.setUnitPrice(product.getPrice());
+            detail.setTotalPrice(product.getPrice().multiply(BigDecimal.valueOf(item.getQuantity())));
 
-
-            OrderDetail detail = OrderDetail.builder()
-                    .order(order)
-                    .product(product)
-                    .quantity(item.getQuantity())
-                    .unitPrice(unitPrice)
-                    .totalPrice(totalPrice)
-                    .build();
             orderDetailRepository.save(detail);
+
+            totalAmount = totalAmount.add(detail.getTotalPrice());
+
+            // STEP 3: Trừ tồn kho sau khi tạo đơn
+            updateStockAfterOrder(product, item.getQuantity());
         }
 
-        // 9. Cập nhật trạng thái Cart → CHECKED_OUT
+        order.setTotalAmount(totalAmount);
+        orderRepository.save(order);
+
+        // Cập nhật trạng thái giỏ hàng
         cart.setCartStatus(CartStatus.CHECKED_OUT);
         cartRepository.save(cart);
 
-        // Tạo cart mới cho customer sau khi checkout thành công
-        Cart newCart = Cart.builder()
-                .customer(customer)
-                .cartStatus(CartStatus.OPEN)
-                .build();
+        // Sau khi checkout xong, tạo giỏ hàng mới OPEN cho khách
+        Cart newCart = new Cart();
+        newCart.setCustomer(customer);
+        newCart.setCartStatus(CartStatus.OPEN);
         cartRepository.save(newCart);
 
-
-        // 10. Trả về response
         return CheckoutResponse.builder()
                 .orderId(order.getOrderId())
                 .receiverName(order.getReceiverName())
                 .email(order.getReceiverEmail())
                 .phone(order.getPhone())
-                .address(order.getAddress())
                 .paymentMethod(order.getPaymentMethod())
-                .totalAmount(order.getTotalAmount())
+                .totalAmount(totalAmount)
                 .status(order.getStatus().name())
                 .createdAt(order.getCreatedAt())
-                .message("Checkout successful")
+                .message("Đặt hàng thành công")
                 .build();
     }
+
+    // Kiểm tra tồn kho cho từng product
+    @Override
+    public void checkStockAvailable(Product product, int productQuantity) {
+        List<Checklist> checklists = checklistRepository
+                .findByProductDetail_Product_ProductId(product.getProductId());
+
+        for(Checklist checklist: checklists){
+            ChecklistItem item = checklist.getItem();
+            int required = checklist.getQuantity() * productQuantity;
+
+            if (item.getStockQuantity() < required) {
+                throw new RuntimeException("Không đủ hàng trong kho cho: " + item.getItemName()
+                        + " (cần " + required + " " + item.getUnit() + ", còn " + item.getStockQuantity() + ")");
+            }
+        }
+    }
+
+    // Update lại kho sau khi đặt thành công
+    @Override
+    public void updateStockAfterOrder(Product product, int productQuantity) {
+        List<Checklist> checklists = checklistRepository
+                .findByProductDetail_Product_ProductId(product.getProductId());
+
+        for(Checklist checklist: checklists){
+            ChecklistItem item = checklist.getItem();
+            int required = checklist.getQuantity() * productQuantity;
+            item.setStockQuantity(item.getStockQuantity() - required);
+            checklistItemRepository.save(item);
+        }
+    }
+
 }
