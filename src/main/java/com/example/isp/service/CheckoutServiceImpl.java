@@ -112,6 +112,7 @@ public class CheckoutServiceImpl implements  CheckoutService{
                 .receiverName(order.getReceiverName())
                 .email(order.getReceiverEmail())
                 .phone(order.getPhone())
+                .address(order.getAddress())
                 .paymentMethod(order.getPaymentMethod())
                 .totalAmount(totalAmount)
                 .status(order.getStatus().name())

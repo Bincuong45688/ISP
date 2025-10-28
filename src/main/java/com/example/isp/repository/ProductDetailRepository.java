@@ -19,16 +19,14 @@ public interface ProductDetailRepository extends JpaRepository<ProductDetail, Lo
     List<ProductDetail> findByProduct_ProductId(Long productId);
 
     @Query("""
-    SELECT DISTINCT pd
-    FROM ProductDetail pd
-    JOIN FETCH pd.product p
-    LEFT JOIN FETCH p.category
-    LEFT JOIN FETCH p.region
-    LEFT JOIN FETCH pd.checklists c
-    LEFT JOIN FETCH c.item
-    WHERE pd.productDetailId = :id
-""")
-    Optional<ProductDetail> findByIdWithAll(@Param("id") Long id);
+        select pd
+        from ProductDetail pd
+        left join fetch pd.checklists cl
+        left join fetch cl.item i
+        left join fetch cl.ritual r
+        where pd.productDetailId = :id
+        """)
+    Optional<ProductDetail> findByIdWithChecklists(@Param("id") Long id);
 
 
 

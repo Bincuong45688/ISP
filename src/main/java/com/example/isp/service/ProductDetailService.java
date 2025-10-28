@@ -37,9 +37,11 @@ public interface ProductDetailService {
      */
     void delete(Long id);
 
+
     //
-    List<ProductDetailResponse> getByProduct(Long productId);
+    @Transactional(readOnly = true)
+    ProductDetailResponse getDetailById(Long productDetailId);
 
-
-    ProductDetail assignChecklists(Long productDetailId, AssignChecklistRequest req);
+    @Transactional
+    void assignChecklists(Long productDetailId, AssignChecklistRequest req);
 }

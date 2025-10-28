@@ -54,19 +54,20 @@ public class ProductDetailController {
     }
 
     // Tao làm
-    @GetMapping("/products/{productId}/details")
-    public ResponseEntity<List<ProductDetailResponse>> getDetailsByProduct(@PathVariable Long productId) {
-        return ResponseEntity.ok(productDetailService.getByProduct(productId));
+    @GetMapping("/{productDetailId}/details")
+    public ResponseEntity<ProductDetailResponse> getDetailById(
+            @PathVariable Long productDetailId) {
+        return ResponseEntity.ok(productDetailService.getDetailById(productDetailId));
     }
 
     @PostMapping("/{productDetailId}/assign-checklists")
-    public ResponseEntity<ProductDetailResponse> assignChecklists(
+    public ResponseEntity<?> assignChecklists(
             @PathVariable Long productDetailId,
-            @RequestBody AssignChecklistRequest req
-    ) {
-        ProductDetail updated = productDetailService.assignChecklists(productDetailId, req);
-        return ResponseEntity.ok(ProductDetailMapper.toResponse(updated));
+            @RequestBody AssignChecklistRequest request) {
+        productDetailService.assignChecklists(productDetailId, request);
+        return ResponseEntity.ok("Assigned checklists successfully");
     }
+
 
 
 

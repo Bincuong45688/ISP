@@ -7,13 +7,13 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Entity
-@Table(name = "ProductDetail")
+@Table(name = "product_detail")
 @Getter @Setter @NoArgsConstructor @AllArgsConstructor @Builder
 public class ProductDetail {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "productDetail_id")
+    @Column(name = "product_detail_id")
     private Long productDetailId;
 
     // FK -> Product(product_id)

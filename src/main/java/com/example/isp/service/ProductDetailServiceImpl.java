@@ -1,13 +1,10 @@
 package com.example.isp.service;
 
 import com.example.isp.dto.request.AssignChecklistRequest;
-import com.example.isp.dto.request.ChecklistItemRequest;
 import com.example.isp.dto.response.ProductDetailResponse;
 import com.example.isp.mapper.ProductDetailMapper;
 import com.example.isp.model.Checklist;
-import com.example.isp.model.ChecklistItem;
 import com.example.isp.model.ProductDetail;
-import com.example.isp.model.enums.ChecklistStatus;
 import com.example.isp.repository.ChecklistItemRepository;
 import com.example.isp.repository.ChecklistRepository;
 import com.example.isp.repository.ProductDetailRepository;
@@ -16,9 +13,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.ArrayList;
 import java.util.List;
-import java.util.Set;
 
 @Service
 @RequiredArgsConstructor
@@ -61,54 +56,31 @@ public class ProductDetailServiceImpl implements ProductDetailService {
     }
 
     //
-    @Override
     @Transactional(readOnly = true)
-    public List<ProductDetailResponse> getByProduct(Long productId) {
-        return productDetailRepository.findByIdWithAll(productId)
-                .stream().map(ProductDetailMapper::toResponse).toList();
+    @Override
+    public ProductDetailResponse getDetailById(Long productDetailId) {
+        ProductDetail pd = productDetailRepository.findByIdWithChecklists(productDetailId)
+                .orElseThrow(() -> new RuntimeException("ProductDetail not found: " + productDetailId));
+        return ProductDetailMapper.toResponse(pd);
     }
 
 
     @Override
     @Transactional
-    public ProductDetail assignChecklists(Long productDetailId, AssignChecklistRequest req) {
-        // Load đủ dữ liệu để tránh Lazy
-        ProductDetail pd = productDetailRepository.findByIdWithAll(productDetailId)
-                .orElseThrow(() -> new EntityNotFoundException("Không tìm thấy ProductDetail: " + productDetailId));
+    public void assignChecklists(Long productDetailId, AssignChecklistRequest req) {
+        ProductDetail detail = productDetailRepository.findById(productDetailId)
+                .orElseThrow(() -> new RuntimeException("ProductDetail not found"));
 
-        // Lấy collection managed (KHÔNG clear)
-        List<Checklist> managed = pd.getChecklists();
-        if (managed == null) {
-            managed = new ArrayList<>();
-            pd.setChecklists(managed);
+        for (Long checklistId : req.getChecklistIds()) {
+            Checklist checklist = checklistRepository.findById(checklistId)
+                    .orElseThrow(() -> new RuntimeException("Checklist not found with ID: " + checklistId));
+
+            checklist.setProductDetail(detail); // liên kết lại với productDetail
+            checklistRepository.save(checklist);
         }
-
-        // Tập itemId đã tồn tại để tránh thêm trùng
-        Set<Long> existingItemIds = managed.stream()
-                .map(c -> c.getItem().getItemId())
-                .collect(java.util.stream.Collectors.toSet());
-
-        for (ChecklistItemRequest it : req.getChecklists()) {
-            // nếu đã có item này thì bỏ qua (giữ nguyên checklist cũ)
-            if (existingItemIds.contains(it.getItemId())) {
-                continue;
-            }
-
-            ChecklistItem item = checklistItemRepository.findById(it.getItemId())
-                    .orElseThrow(() -> new EntityNotFoundException("Không tìm thấy item: " + it.getItemId()));
-
-            Checklist cl = Checklist.builder()
-                    .productDetail(pd)               // quan trọng: set owner
-                    .item(item)
-                    .quantity(it.getQuantity())
-                    .status(ChecklistStatus.PENDING)
-                    .build();
-
-            managed.add(cl);                     // chỉ thêm mới, không xóa cái cũ
-        }
-
-        return productDetailRepository.save(pd);
+        productDetailRepository.save(detail);
     }
+
 
 
 

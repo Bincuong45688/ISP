@@ -7,6 +7,6 @@ import java.util.List;
 @Getter
 @Setter
 public class AssignChecklistRequest {
-    private List<ChecklistItemRequest> checklists;
+    private List<Long> checklistIds;
 }
 

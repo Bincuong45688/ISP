@@ -10,5 +10,5 @@ public record ProductDetailResponse(
         BigDecimal price,
         String categoryName,
         String regionName,
-        List<ChecklistBrief> checklist
+        List<ChecklistResponse> checklists
 ) {}

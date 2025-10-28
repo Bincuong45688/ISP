@@ -1,8 +1,7 @@
 package com.example.isp.mapper;
 
-import com.example.isp.dto.response.ChecklistBrief;
+import com.example.isp.dto.response.ChecklistResponse;
 import com.example.isp.dto.response.ProductDetailResponse;
-import com.example.isp.model.Checklist;
 import com.example.isp.model.ProductDetail;
 
 import java.util.List;
@@ -12,8 +11,9 @@ public final class ProductDetailMapper {
 
     public static ProductDetailResponse toResponse(ProductDetail pd) {
         var p = pd.getProduct();
-        List<ChecklistBrief> briefs = pd.getChecklists().stream()
-                .map(ProductDetailMapper::toBrief)
+
+        List<ChecklistResponse> responses = pd.getChecklists().stream()
+                .map(ChecklistMapper::toResponse) // dùng ChecklistMapper đã có
                 .toList();
 
         return new ProductDetailResponse(
@@ -23,15 +23,7 @@ public final class ProductDetailMapper {
                 p.getPrice(),
                 p.getCategory().getCategoryName(),
                 p.getRegion().getRegionName(),
-                briefs
-        );
-    }
-
-    private static ChecklistBrief toBrief(Checklist c) {
-        return new ChecklistBrief(
-                c.getChecklistId(),
-                c.getItem().getItemName(),
-                c.getQuantity()
+                responses
         );
     }
 }
