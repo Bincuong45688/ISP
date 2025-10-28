@@ -1,9 +1,6 @@
 package com.example.isp.controller;
 
-import com.example.isp.dto.request.CreateUserChecklistRequest;
-import com.example.isp.dto.request.UpdateUserChecklistItemRequest;
-import com.example.isp.dto.response.UserChecklistDTO;
-import com.example.isp.dto.response.UserChecklistItemDTO;
+import com.example.isp.dto.*;
 import com.example.isp.service.UserChecklistService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -21,7 +18,6 @@ import java.util.Map;
 @RestController
 @RequestMapping("/api/user-checklists")
 @RequiredArgsConstructor
-@CrossOrigin(origins = "*")
 public class UserChecklistController {
 
     private final UserChecklistService userChecklistService;

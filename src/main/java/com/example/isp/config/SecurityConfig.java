@@ -83,6 +83,17 @@ public class SecurityConfig {
 
                         // ===== User Checklists: CUSTOMER có toàn quyền =====
                         .requestMatchers("/api/user-checklists/**").hasAnyAuthority("ROLE_CUSTOMER","CUSTOMER")
+                        .requestMatchers("/api/user-checklist-items/**").hasAnyAuthority("ROLE_CUSTOMER","CUSTOMER")
+
+                        // ===== Vouchers =====
+                        // Staff can manage vouchers (CRUD)
+                        .requestMatchers(HttpMethod.POST, "/api/vouchers").hasAnyAuthority("ROLE_STAFF","STAFF")
+                        .requestMatchers(HttpMethod.PUT, "/api/vouchers/**").hasAnyAuthority("ROLE_STAFF","STAFF")
+                        .requestMatchers(HttpMethod.DELETE, "/api/vouchers/**").hasAnyAuthority("ROLE_STAFF","STAFF")
+                        .requestMatchers(HttpMethod.GET, "/api/vouchers/**").permitAll() // Anyone can view vouchers
+                        // Customers can apply vouchers
+                        .requestMatchers(HttpMethod.POST, "/api/vouchers/apply").hasAnyAuthority("ROLE_CUSTOMER","CUSTOMER")
+                        .requestMatchers(HttpMethod.POST, "/api/vouchers/confirm/**").hasAnyAuthority("ROLE_CUSTOMER","CUSTOMER")
 
                         // ===== Cart: CUSTOMER =====
                         .requestMatchers(HttpMethod.GET,
