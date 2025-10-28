@@ -1,4 +1,4 @@
-package com.example.isp.dto.response;
+package com.example.isp.dto;
 
 import lombok.*;
 

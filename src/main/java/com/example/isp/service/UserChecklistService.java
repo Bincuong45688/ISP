@@ -1,9 +1,6 @@
 package com.example.isp.service;
 
-import com.example.isp.dto.request.CreateUserChecklistRequest;
-import com.example.isp.dto.request.UpdateUserChecklistItemRequest;
-import com.example.isp.dto.response.UserChecklistDTO;
-import com.example.isp.dto.response.UserChecklistItemDTO;
+import com.example.isp.dto.*;
 import com.example.isp.model.*;
 import com.example.isp.repository.*;
 import jakarta.transaction.Transactional;
@@ -234,5 +231,75 @@ public class UserChecklistService {
             item.setStockQuantity(currentStock - quantityToDeduct);
             checklistItemRepository.save(item);
         }
+    }
+
+    /**
+     * Get all items for a specific user checklist
+     */
+    public List<UserChecklistItemDTO> getUserChecklistItems(Long userChecklistId) {
+        List<UserChecklistItem> items = userChecklistItemRepository
+                .findByUserChecklist_UserChecklistId(userChecklistId);
+        return items.stream()
+                .map(this::convertItemToDTO)
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * Get a specific user checklist item by ID
+     */
+    public UserChecklistItemDTO getUserChecklistItemById(Long id) {
+        UserChecklistItem item = userChecklistItemRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("User checklist item not found with id: " + id));
+        return convertItemToDTO(item);
+    }
+
+    /**
+     * Create a new user checklist item
+     */
+    @Transactional
+    public UserChecklistItemDTO createUserChecklistItem(CreateUserChecklistItemRequest request) {
+        // Validate user checklist
+        UserChecklist userChecklist = userChecklistRepository.findById(request.getUserChecklistId())
+                .orElseThrow(() -> new RuntimeException("User checklist not found with id: " + request.getUserChecklistId()));
+
+        // Validate item
+        ChecklistItem item = checklistItemRepository.findById(request.getItemId())
+                .orElseThrow(() -> new RuntimeException("Item not found with id: " + request.getItemId()));
+
+        // Create new user checklist item
+        UserChecklistItem userChecklistItem = UserChecklistItem.builder()
+                .userChecklist(userChecklist)
+                .item(item)
+                .quantity(request.getQuantity())
+                .checked(false)
+                .note(request.getNote())
+                .build();
+
+        userChecklistItem = userChecklistItemRepository.save(userChecklistItem);
+        return convertItemToDTO(userChecklistItem);
+    }
+
+    /**
+     * Delete a user checklist item
+     */
+    @Transactional
+    public void deleteUserChecklistItem(Long id) {
+        if (!userChecklistItemRepository.existsById(id)) {
+            throw new RuntimeException("User checklist item not found with id: " + id);
+        }
+        userChecklistItemRepository.deleteById(id);
+    }
+
+    /**
+     * Mark item as checked/unchecked
+     */
+    @Transactional
+    public UserChecklistItemDTO checkUserChecklistItem(Long id, Boolean checked) {
+        UserChecklistItem item = userChecklistItemRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("User checklist item not found with id: " + id));
+        
+        item.setChecked(checked);
+        item = userChecklistItemRepository.save(item);
+        return convertItemToDTO(item);
     }
 }

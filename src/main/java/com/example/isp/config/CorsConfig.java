@@ -10,13 +10,14 @@ public class CorsConfig implements WebMvcConfigurer {
     @Override
     public void addCorsMappings(CorsRegistry registry) {
         registry.addMapping("/**")
-
-                .allowedOrigins(
+                // Use allowedOriginPatterns instead of allowedOrigins when allowCredentials is true
+                .allowedOriginPatterns(
                         "https://isp-7jpp.onrender.com",
-                        "http://localhost:3000"
+                        "http://localhost:3000",
+                        "http://localhost:*"  // Allow any localhost port
                 )
                 // Cho phép tất cả method cần thiết
-                .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
+                .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH")
                 // Cho phép mọi header (Authorization, Content-Type, v.v.)
                 .allowedHeaders("*")
                 // Cho phép FE đọc header JWT/token trong response
