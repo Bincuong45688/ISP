@@ -9,4 +9,5 @@ public interface PayOSService {
 
     /** Xử lý webhook PayOS (raw JSON + header chữ ký). */
     void handlePaymentWebhookRaw(String rawBody, String headerSignature);
+    void userCancel(Long orderId);
 }

@@ -20,4 +20,10 @@ public class PaymentController {
     public ResponseEntity<Map<String, String>> createPayment(@PathVariable Long orderId) {
         return ResponseEntity.ok(payOSService.createPaymentLink(orderId));
     }
+    @PostMapping("/cancel/{orderId}")
+    @PreAuthorize("hasRole('CUSTOMER')")
+    public ResponseEntity<Void> cancelPayment(@PathVariable Long orderId) {
+        payOSService.userCancel(orderId);
+        return ResponseEntity.ok().build();
+    }
 }

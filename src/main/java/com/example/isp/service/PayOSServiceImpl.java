@@ -41,7 +41,6 @@ public class PayOSServiceImpl implements PayOSService {
         Order order = orderRepository.findById(orderId)
                 .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy đơn hàng #" + orderId));
 
-        // Nếu đã có payment PENDING -> trả lại link cũ
         var pendingOpt = paymentRepository
                 .findTopByOrder_OrderIdAndStatusOrderByIdDesc(orderId, PaymentStatus.PENDING);
         if (pendingOpt.isPresent() && pendingOpt.get().getCheckoutUrl() != null) {
@@ -52,19 +51,20 @@ public class PayOSServiceImpl implements PayOSService {
             return reuse;
         }
 
-        // Sinh orderCode duy nhất
         long attempt = paymentRepository.countByOrder_OrderId(orderId) + 1;
-        long payosOrderCode = order.getOrderId() + attempt;
+        long payosOrderCode = order.getOrderId()  + attempt;
 
         long orderCodeForPayOS = payosOrderCode;
         int amountForPayOS = safeInt(order.getTotalAmount().longValue(), "amount");
+
+        String cancelUrlFull = cancelUrl + "?orderId=" + orderId + "&code=" + payosOrderCode;
 
         PaymentData paymentData = PaymentData.builder()
                 .orderCode(orderCodeForPayOS)
                 .amount(amountForPayOS)
                 .description("Thanh toán đơn hàng #" + orderId)
                 .returnUrl(successUrl)
-                .cancelUrl(cancelUrl)
+                .cancelUrl(cancelUrlFull)
                 .build();
 
         try {
@@ -129,13 +129,16 @@ public class PayOSServiceImpl implements PayOSService {
 
             Payment payment = opt.get();
 
-            // === Xử lý trạng thái thanh toán từ PayOS ===
             String code = str(data.get("code"));
             String desc = str(data.get("desc"));
+            String event = str(payload.get("event"));
+            String status = str(data.get("status"));
             String reference = str(data.get("reference"));
-            String transactionDateTime = str(data.get("transactionDateTime"));
 
             boolean isSuccess = eq(code, "00") || eq(desc, "success");
+            boolean isCancelled = eq(event, "payment.cancelled")
+                    || eq(status, "CANCELLED") || eq(status, "cancelled")
+                    || eq(desc, "cancelled");
 
             if (isSuccess) {
                 payment.setStatus(PaymentStatus.SUCCESS);
@@ -144,9 +147,13 @@ public class PayOSServiceImpl implements PayOSService {
                     payment.setTransactionId(reference);
                 }
                 log.info("[PayOS] ✅ Thanh toán thành công cho orderCode={} (ref={})", payosOrderCode, reference);
+            } else if (isCancelled) {
+                payment.setStatus(PaymentStatus.CANCELED);
+                payment.setTransactionId("USER_CANCELLED_WEBHOOK");
+                log.info("[PayOS] 🚫 Người dùng HỦY thanh toán qua webhook, orderCode={}", payosOrderCode);
             } else {
                 payment.setStatus(PaymentStatus.FAILED);
-                log.warn("[PayOS] ❌ Thanh toán thất bại hoặc không xác định cho orderCode={}", payosOrderCode);
+                log.warn("[PayOS] ❌ Thanh toán thất bại/không xác định, orderCode={}", payosOrderCode);
             }
 
             paymentRepository.save(payment);
@@ -157,30 +164,35 @@ public class PayOSServiceImpl implements PayOSService {
         }
     }
 
+    @Override
+    public void userCancel(Long orderId) {
+        var opt = paymentRepository
+                .findTopByOrder_OrderIdAndStatusOrderByIdDesc(orderId, PaymentStatus.PENDING);
+        if (opt.isEmpty()) {
+            log.info("[PayOS] userCancel: không còn payment PENDING cho orderId={}", orderId);
+            return;
+        }
+        Payment p = opt.get();
+        p.setStatus(PaymentStatus.CANCELED);
+        p.setTransactionId("USER_CANCELLED_FE");
+        paymentRepository.save(p);
+        log.info("[PayOS] userCancel: cập nhật orderId={} -> CANCELED", orderId);
+    }
+
     // ===== Helpers =====
     @SuppressWarnings("unchecked")
     private static Map<String, Object> asMap(Object o) {
         return (o instanceof Map<?, ?> m) ? (Map<String, Object>) m : Map.of();
     }
-
-    private static String str(Object o) {
-        return (o == null ? null : String.valueOf(o));
-    }
-
-    private static boolean eq(String a, String b) {
-        return a != null && a.equalsIgnoreCase(b);
-    }
-
+    private static String str(Object o) { return (o == null ? null : String.valueOf(o)); }
+    private static boolean eq(String a, String b) { return a != null && a.equalsIgnoreCase(b); }
     private static Long toLong(Object v) {
         try {
             if (v == null) return null;
             if (v instanceof Number n) return n.longValue();
             return Long.parseLong(String.valueOf(v));
-        } catch (Exception ignore) {
-            return null;
-        }
+        } catch (Exception ignore) { return null; }
     }
-
     private static int safeInt(long v, String field) {
         if (v > Integer.MAX_VALUE) {
             throw new IllegalArgumentException(field + " vượt quá giới hạn Integer: " + v);
