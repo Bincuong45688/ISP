@@ -121,7 +121,7 @@ public class SecurityConfig {
                         .hasAnyAuthority("ROLE_SHIPPER", "SHIPPER")
 
                         // ===== PAYOS =====
-                        .requestMatchers(HttpMethod.POST, "/webhooks/payos").permitAll()
+                        .requestMatchers("/api/payos/webhook").permitAll()   // <— cho phép mọi method
                         .requestMatchers("/api/payments/**").hasAnyAuthority("ROLE_CUSTOMER", "CUSTOMER")
 
                         .anyRequest().authenticated()
