@@ -1,6 +1,10 @@
 package com.example.isp.service;
 
+import com.example.isp.dto.request.AssignChecklistRequest;
+import com.example.isp.dto.response.ProductDetailResponse;
 import com.example.isp.model.ProductDetail;
+import org.springframework.transaction.annotation.Transactional;
+
 import java.util.List;
 
 public interface ProductDetailService {
@@ -32,4 +36,12 @@ public interface ProductDetailService {
      * @param id ID của ProductDetail cần xóa
      */
     void delete(Long id);
+
+
+    //
+    @Transactional(readOnly = true)
+    ProductDetailResponse getDetailById(Long productDetailId);
+
+    @Transactional
+    void assignChecklists(Long productDetailId, AssignChecklistRequest req);
 }

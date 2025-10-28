@@ -4,6 +4,7 @@ import com.example.isp.dto.response.ProductResponse;
 import com.example.isp.mapper.ProductMapper;
 import com.example.isp.model.Category;
 import com.example.isp.model.Product;
+import com.example.isp.model.ProductDetail;
 import com.example.isp.model.Region;
 import com.example.isp.model.enums.ProductStatus;
 import com.example.isp.service.CloudinaryService;
@@ -57,6 +58,8 @@ public class ProductController {
             @RequestParam("file") MultipartFile file
     ) {
         String imageUrl = cloudinaryService.uploadImage(file, "isp/products");
+
+        // 1) Tạo Product
         Product p = Product.builder()
                 .productName(productName)
                 .price(price)
@@ -65,8 +68,20 @@ public class ProductController {
                 .category(Category.builder().categoryId(categoryId).build())
                 .region(Region.builder().regionId(regionId).build())
                 .build();
-        return ProductMapper.toResponse(productService.create(p));
+
+        // 2) Tạo 1 ProductDetail "default" để gắn checklist sau này
+        ProductDetail d = ProductDetail.builder().build();
+
+        // 3) Gắn 2 chiều
+        p.addDetail(d);
+
+        // 4) Lưu: cascade ALL sẽ insert luôn ProductDetail
+        Product saved = productService.create(p);
+
+        return ProductMapper.toResponse(saved);
     }
+
+
 
     // ==== Update (multipart/form-data) ====
     @PutMapping(path = "/{id}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)

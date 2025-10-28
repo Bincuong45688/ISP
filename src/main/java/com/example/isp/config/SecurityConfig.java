@@ -64,7 +64,7 @@ public class SecurityConfig {
 
                         // Write: STAFF
                         .requestMatchers(HttpMethod.POST,
-                                "/api/categories/**", "/api/products/**", "/api/product-details/**","/api/checklists/**","/api/checklist-items/**","/api/rituals/**", "/api/regions/**"
+                                "/api/categories/**", "/api/products/**", "/api/product-details/**", "/api/product-details/*/assign-checklists","/api/checklists/**","/api/checklist-items/**","/api/rituals/**", "/api/regions/**"
                         ).hasAnyAuthority("ROLE_STAFF","STAFF")
                         .requestMatchers(HttpMethod.PUT,
                                 "/api/categories/**", "/api/products/**", "/api/product-details/**","/api/checklists/**", "/aapi/checklist-items/**","/api/rituals/**","/api/regions/**"
