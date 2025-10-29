@@ -40,7 +40,7 @@ public class StaffOrderService {
             throw new RuntimeException("Only pending orders can be confirmed");
         }
 
-        order.setStatus(OrderStatus.CONFIRMED);
+        order.setStatus(OrderStatus.PAID);
         orderRepository.save(order);
     }
 
