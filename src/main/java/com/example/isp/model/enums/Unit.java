@@ -1,6 +1,10 @@
 package com.example.isp.model.enums;
 
+import java.util.concurrent.ConcurrentNavigableMap;
+
 public enum Unit {
+    String("String"),
+    CON("Con"),
     CHEN("Chén"),
     LIT("Lít"),
     LY("Ly"),
@@ -16,16 +20,16 @@ public enum Unit {
     GRAM("Gram"),
     TO("Tờ"),
     CUON("Cuốn"),
+    CANH("Cành"),
     CHAU("Chậu"),
     LANG("Lạng"),
-    LUONG("Lượng"),
     MAM("Mâm"),
-    CON("Con"),
-    CANH("Cánh"),
     PHAN("Phần"),
-    CHAI("Chai");
-    
-    
+    DIA("Đĩa"),
+    CHAI("Chai"),
+    NAI("Nải") ,
+    LUONG("Lượng");
+
 
     private final String displayName;
 
