@@ -19,7 +19,13 @@ public enum Unit {
     CHAU("Chậu"),
     LANG("Lạng"),
     LUONG("Lượng"),
-    MAM("Mâm");
+    MAM("Mâm"),
+    CON("Con"),
+    CANH("Cánh"),
+    PHAN("Phần"),
+    CHAI("Chai");
+    
+    
 
     private final String displayName;
 
