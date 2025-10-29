@@ -41,7 +41,7 @@ public class Order {
     private BigDecimal totalAmount;
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
+    @Column(nullable = false, length = 16)
     private OrderStatus status; // PENDING, CONFIRMED, DELIVERED, CANCELED
 
     private LocalDateTime createdAt;
