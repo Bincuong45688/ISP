@@ -11,4 +11,5 @@ public interface ShipperRepository extends JpaRepository<Shipper, Long> {
     boolean existsByAccount(Account account);
     Optional<Shipper> findByAccount(Account account);
     List<Shipper> findAll();
+    Optional<Shipper> findByAccountUsername(String username);
 }
