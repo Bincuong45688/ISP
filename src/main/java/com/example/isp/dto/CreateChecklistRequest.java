@@ -1,4 +1,4 @@
-package com.example.isp.dto.request;
+package com.example.isp.dto;
 
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;

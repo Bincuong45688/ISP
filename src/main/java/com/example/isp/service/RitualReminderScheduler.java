@@ -1,6 +1,6 @@
 package com.example.isp.service;
 
-import com.example.isp.model.UserChecklistDTO;
+import com.example.isp.dto.UserChecklistDTO;
 import com.example.isp.model.Customer;
 import com.example.isp.repository.CustomerRepository;
 import lombok.RequiredArgsConstructor;
