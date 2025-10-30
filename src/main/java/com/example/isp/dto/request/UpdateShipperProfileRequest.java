@@ -1,12 +1,9 @@
-package com.example.isp.dto.response;
+package com.example.isp.dto.request;
 
-import lombok.Builder;
 import lombok.Data;
 
 @Data
-@Builder
-public class ShipperResponse {
-    private Long shipperId;
+public class UpdateShipperProfileRequest {
     private String shipperName;
     private String email;
     private String phone;
