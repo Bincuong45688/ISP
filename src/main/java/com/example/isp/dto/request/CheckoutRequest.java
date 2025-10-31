@@ -12,6 +12,6 @@ public class CheckoutRequest {
     private String email;           // Email xác nhận đơn hàng
     private String phone;           // SĐT người nhận
     private String address;         // Địa chỉ giao hàng
-    private String paymentMethod;   // COD / BANK
+    private final String paymentMethod = "BANK";   // COD / BANK
     private String note;            // Ghi chú thêm (nếu có)
 }

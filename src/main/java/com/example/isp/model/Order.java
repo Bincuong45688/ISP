@@ -12,13 +12,16 @@ import java.util.List;
 @Getter @Setter
 @NoArgsConstructor @AllArgsConstructor
 @Builder
-@Table(name = "orders")
+@Table(name = "orders", uniqueConstraints = {@UniqueConstraint(columnNames = "order_code")})
 public class Order {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "order_id")
     private Long orderId;
+
+    @Column(name = "order_code", nullable = false, unique = true)
+    private String orderCode;
 
     // Liên kết với customer
     @ManyToOne

@@ -12,6 +12,7 @@ import java.time.LocalDateTime;
 @Builder
 public class CheckoutResponse {
     private Long orderId;
+    private String orderCode;
     private String receiverName;
     private String email;
     private String phone;

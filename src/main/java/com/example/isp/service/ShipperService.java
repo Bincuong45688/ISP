@@ -1,10 +1,13 @@
 package com.example.isp.service;
 
 import com.example.isp.dto.request.LoginRequest;
+import com.example.isp.dto.request.UpdateShipperProfileRequest;
 import com.example.isp.dto.response.AuthResponse;
 import com.example.isp.dto.response.OrderResponse;
 import com.example.isp.dto.response.ShipperProfileResponse;
+import com.example.isp.dto.response.ShipperResponse;
 import com.example.isp.mapper.OrderMapper;
+import com.example.isp.mapper.ShipperMapper;
 import com.example.isp.model.Account;
 import com.example.isp.model.Order;
 import com.example.isp.model.Shipper;
@@ -20,6 +23,7 @@ import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
@@ -29,6 +33,7 @@ public class ShipperService {
 
     private final AccountRepository accountRepository;
     private final ShipperRepository shipperRepository;
+    private final ShipperMapper shipperMapper;
     private final JwtService jwtSerivce;
     private final PasswordEncoder passwordEncoder;
     private final OrderRepository orderRepository;
@@ -83,6 +88,23 @@ public class ShipperService {
                 .email(account.getEmail())
                 .status(account.getStatus())
                 .build();
+    }
+
+    // Update profile
+    @Transactional
+    public ShipperResponse updateProfile(String username, UpdateShipperProfileRequest req){
+        Shipper shipper = shipperRepository.findByAccountUsername(username)
+                .orElseThrow(() -> new IllegalArgumentException("Shipper not found"));
+
+        Account acc = shipper.getAccount();
+
+        if (req.getShipperName() != null) shipper.setShipperName(req.getShipperName());
+        if (req.getGender() != null) shipper.setGender(req.getGender());
+        if (req.getEmail() != null) acc.setEmail(req.getEmail());
+        if (req.getPhone() != null) acc.setPhone(req.getPhone());
+
+        return shipperMapper.toResponse(shipper);
+
     }
 
     // Shipper chấp nhận đơn (chuyển status từ CONFIRM sang SHIPPING)
