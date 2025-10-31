@@ -15,6 +15,9 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
     List<Order> findByCustomerCustomerId(Long customerId);
     List<Order> findByShipperUsername(String username);
     List<Order> findByShipperUsernameAndStatus(String username, OrderStatus status);
+
+    boolean existsByOrderCode(String orderCode);
+
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("select o from Order o where o.orderId = :id")
     Optional<Order> findByIdForUpdate(@Param("id") Long id);
