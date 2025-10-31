@@ -21,6 +21,7 @@ import java.time.OffsetDateTime;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.ThreadLocalRandom;
 
 @Service
 @RequiredArgsConstructor
@@ -40,23 +41,24 @@ public class PayOSServiceImpl implements PayOSService {
 
     /**
      * Tạo link thanh toán PayOS
-     * - payos_order_code (gửi PayOS) = số Long, tự tăng +1 mỗi lần.
-     * - order_code (nội bộ) = chuỗi đẹp để hiển thị/đối soát.
+     * - payos_order_code (gửi PayOS) = Long, duy nhất, tự tăng an toàn.
+     * - order_code (nội bộ) = chuỗi hiển thị/đối soát (cố định theo Order).
      */
     @Override
+    @Transactional
     public Map<String, String> createPaymentLink(Long orderId) {
         // 1) Lấy đơn & đảm bảo có order_code nội bộ cố định
         Order order = orderRepository.findById(orderId)
                 .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy đơn hàng #" + orderId));
-        String internalOrderCode = ensureOrderCode(order); // ví dụ: "NNV-20251031-U6J6Y"
+        String internalOrderCode = ensureOrderCode(order);
 
         // 2) Chuẩn hóa dữ liệu
         int amountForPayOS = safeInt(order.getTotalAmount().longValue(), "amount");
         String returnUrl = successUrl;
         String cancelUrlFull = cancelUrl + "?orderId=" + orderId;
 
-        // 3) Lấy mã PayOS tự tăng (global)
-        long payosOrderCode = getNextPayosOrderCode();
+        // 3) Lấy mã PayOS (global, tăng dần, synchronized để tránh race-condition)
+        long payosOrderCode = nextPayosOrderCode();
 
         // 4) Gọi PayOS (SDK yêu cầu Long cho orderCode)
         PaymentData paymentData = PaymentData.builder()
@@ -70,13 +72,13 @@ public class PayOSServiceImpl implements PayOSService {
         try {
             var response = payOS.createPaymentLink(paymentData);
 
-            // 5) Lưu Payment (lưu payos_order_code dạng chuỗi cho dễ đọc)
+            // 5) Lưu Payment
             Payment payment = Payment.builder()
                     .order(order)
                     .provider("PAYOS")
                     .status(PaymentStatus.PENDING)
                     .amount(order.getTotalAmount())
-                    .payosOrderCode(String.valueOf(payosOrderCode))
+                    .payosOrderCode(payosOrderCode)
                     .checkoutUrl(response.getCheckoutUrl())
                     .createdAt(OffsetDateTime.now())
                     .build();
@@ -102,6 +104,8 @@ public class PayOSServiceImpl implements PayOSService {
      * - SUCCESS -> Payment.SUCCESS, Order.PAID
      * - CANCEL  -> Payment.CANCELED
      * - else    -> Payment.FAILED
+     *
+     * Ghi chú: Chưa bật verify chữ ký (headerSignature) – có thể bổ sung nếu bạn bật xác thực webhook.
      */
     @Override
     @Transactional
@@ -115,11 +119,15 @@ public class PayOSServiceImpl implements PayOSService {
             Map<String, Object> payload = objectMapper.readValue(rawBody, new TypeReference<>() {});
             Map<String, Object> data = asMap(payload.get("data"));
 
-            // PayOS có thể trả số hoặc chuỗi -> convert an toàn sang String
             Object orderCodeObj = data.get("orderCode");
-            String payosOrderCode = (orderCodeObj == null) ? null : String.valueOf(orderCodeObj);
-            if (isBlank(payosOrderCode)) {
+            if (orderCodeObj == null) {
                 log.warn("[PayOS] Webhook thiếu orderCode -> bỏ qua");
+                return;
+            }
+
+            Long payosOrderCode = toLong(orderCodeObj);
+            if (payosOrderCode == null) {
+                log.warn("[PayOS] Webhook orderCode không hợp lệ: {}", orderCodeObj);
                 return;
             }
 
@@ -132,13 +140,14 @@ public class PayOSServiceImpl implements PayOSService {
             Payment payment = opt.get();
             Order order = payment.getOrder();
 
-            String code = str(data.get("code"));
-            String desc = str(data.get("desc"));
-            String event = str(payload.get("event"));
-            String status = str(data.get("status"));
-            String reference = str(data.get("reference"));
+            String code = str(data.get("code"));       // "00" nếu success
+            String desc = str(data.get("desc"));       // "success" nếu success
+            String event = str(payload.get("event"));  // "payment.completed" | "payment.cancelled" ...
+            String status = str(data.get("status"));   // "PAID" | "CANCELLED" ...
+            String reference = str(data.get("reference")); // Mã tham chiếu ngân hàng
 
-            boolean isSuccess = eq(code, "00") || eq(desc, "success") || eq(status, "PAID");
+            boolean isSuccess = eq(code, "00") || eq(desc, "success") || eq(status, "PAID")
+                    || eq(event, "payment.completed");
             boolean isCancelled = eq(event, "payment.cancelled")
                     || eq(status, "CANCELLED") || eq(status, "cancelled")
                     || eq(desc, "cancelled");
@@ -152,19 +161,24 @@ public class PayOSServiceImpl implements PayOSService {
                     order.setStatus(OrderStatus.PAID);
                     orderRepository.save(order);
                 }
-                log.info("[PayOS] Thanh toán thành công -> Order {} (order_code={}) cập nhật PAID",
+                log.info("[PayOS] SUCCESS -> Order {} (order_code={}) cập nhật PAID",
                         order != null ? order.getOrderId() : null,
                         order != null ? order.getOrderCode() : null);
 
             } else if (isCancelled) {
                 payment.setStatus(PaymentStatus.CANCELED);
-                payment.setTransactionId("USER_CANCELLED_WEBHOOK");
-                log.info("[PayOS] Người dùng hủy thanh toán (order_code={})",
+                if (isBlank(payment.getTransactionId())) {
+                    payment.setTransactionId("USER_CANCELLED_WEBHOOK");
+                }
+                log.info("[PayOS] CANCELLED (order_code={})",
                         order != null ? order.getOrderCode() : "N/A");
 
             } else {
                 payment.setStatus(PaymentStatus.FAILED);
-                log.warn("[PayOS] Thanh toán thất bại/không xác định (order_code={})",
+                if (isBlank(payment.getTransactionId())) {
+                    payment.setTransactionId("FAILED_WEBHOOK");
+                }
+                log.warn("[PayOS] FAILED/UNKNOWN (order_code={})",
                         order != null ? order.getOrderCode() : "N/A");
             }
 
@@ -176,6 +190,7 @@ public class PayOSServiceImpl implements PayOSService {
     }
 
     @Override
+    @Transactional
     public void userCancel(Long orderId) {
         var opt = paymentRepository
                 .findTopByOrder_OrderIdAndStatusOrderByIdDesc(orderId, PaymentStatus.PENDING);
@@ -185,24 +200,37 @@ public class PayOSServiceImpl implements PayOSService {
         }
         Payment p = opt.get();
         p.setStatus(PaymentStatus.CANCELED);
-        p.setTransactionId("USER_CANCELLED_FE");
+        if (isBlank(p.getTransactionId())) {
+            p.setTransactionId("USER_CANCELLED_FE");
+        }
         paymentRepository.save(p);
         log.info("[PayOS] userCancel: cập nhật orderId={} -> CANCELED", orderId);
     }
 
     // ===================== Helpers =====================
 
-    /** Lấy payos_order_code mới: lấy payment id mới nhất và +1 (global auto-increment). */
-    private long getNextPayosOrderCode() {
-        return paymentRepository.findTopByOrderByIdDesc()
-                .map(p -> {
-                    try {
-                        return Long.parseLong(p.getPayosOrderCode()) + 1;
-                    } catch (Exception e) {
-                        return 1L;
-                    }
-                })
-                .orElse(1L);
+    /**
+     * Lấy payos_order_code mới:
+     * - Cố gắng +1 từ payment cuối cùng (global).
+     * - Nếu null/không hợp lệ, fallback sang epoch milli + suffix ngẫu nhiên để chắc chắn duy nhất.
+     * - Synchronized để tránh 2 thread cấp trùng trong cùng instance.
+     */
+    private static final Object CODE_LOCK = new Object();
+
+    private long nextPayosOrderCode() {
+        synchronized (CODE_LOCK) {
+            long base = paymentRepository.findTopByOrderByIdDesc()
+                    .map(p -> p.getPayosOrderCode() == null ? 0L : p.getPayosOrderCode())
+                    .orElse(0L);
+
+            long candidate = (base > 0) ? base + 1 : System.currentTimeMillis();
+
+            // Thêm 1 chữ số ngẫu nhiên khi khởi tạo từ epoch để giảm xác suất trùng mili-giây hiếm hoi
+            if (base <= 0) {
+                candidate = candidate * 10 + ThreadLocalRandom.current().nextInt(0, 10);
+            }
+            return candidate;
+        }
     }
 
     /** Đảm bảo order_code nội bộ cố định. */
@@ -228,18 +256,28 @@ public class PayOSServiceImpl implements PayOSService {
     }
 
     private static boolean eq(String a, String b) {
-        return a != null && a.equalsIgnoreCase(b);
+        return a != null && b != null && a.equalsIgnoreCase(b);
     }
 
     private static int safeInt(long v, String field) {
         if (v > Integer.MAX_VALUE)
             throw new IllegalArgumentException(field + " vượt giới hạn Integer: " + v);
+        if (v < 0)
+            throw new IllegalArgumentException(field + " âm không hợp lệ: " + v);
         return (int) v;
     }
 
-    /** Mô tả ngắn gọn để không vượt 25 ký tự (yêu cầu PayOS). */
     private static String shortDesc(String internalOrderCode) {
-        String s = "PAY " + internalOrderCode;
+        String s = "PAY " + internalOrderCode; // ví dụ: "PAY ORD123"
         return s.length() <= 25 ? s : s.substring(0, 25);
+    }
+
+    private static Long toLong(Object o) {
+        try {
+            if (o instanceof Number n) return n.longValue();
+            return Long.parseLong(String.valueOf(o));
+        } catch (Exception e) {
+            return null;
+        }
     }
 }
