@@ -46,17 +46,20 @@ public class PayOSServiceImpl implements PayOSService {
         Order order = orderRepository.findById(orderId)
                 .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy đơn hàng #" + orderId));
 
+        // Đảm bảo đơn hàng có mã nội bộ cố định trước khi trả về
+        String internalOrderCode = ensureOrderCode(order);
+
         int amountForPayOS = safeInt(order.getTotalAmount().longValue(), "amount");
         String cancelUrlFull = cancelUrl + "?orderId=" + orderId;
 
-        // orderCode = orderId * 10 + attempt (1..9)
+        // orderCode PayOS = orderId * 10 + attempt (1..9)
         long base = orderId * 10L;
 
         for (int attempt = 1; attempt <= 9; attempt++) {
             long payosOrderCode = base + attempt;
 
-            // 🔹 Mô tả ngắn gọn, không vượt 25 ký tự
-            String description = shortPayDesc(orderId, attempt);
+            // Mô tả ngắn gọn, không vượt 25 ký tự
+            String description = ensureOrderCode(order);
 
             PaymentData paymentData = PaymentData.builder()
                     .orderCode(payosOrderCode)
@@ -82,7 +85,8 @@ public class PayOSServiceImpl implements PayOSService {
 
                 Map<String, String> result = new HashMap<>();
                 result.put("checkoutUrl", response.getCheckoutUrl());
-                result.put("orderCode", "ORD" + order.getOrderId());
+                result.put("payosOrderCode", String.valueOf(payosOrderCode)); // mã PayOS (số)
+                result.put("orderCode", internalOrderCode);                   // mã nội bộ cố định
                 result.put("amount", order.getTotalAmount().toPlainString());
                 return result;
 
@@ -155,15 +159,18 @@ public class PayOSServiceImpl implements PayOSService {
                     order.setStatus(OrderStatus.PAID);
                     orderRepository.save(order);
                 }
-                log.info("[PayOS] ✅ Thanh toán thành công -> Order#{} cập nhật PAID", order.getOrderId());
+                log.info("[PayOS]  Thanh toán thành công -> Order {} (orderCode={}) cập nhật PAID",
+                        order.getOrderId(), order.getOrderCode());
 
             } else if (isCancelled) {
                 payment.setStatus(PaymentStatus.CANCELED);
                 payment.setTransactionId("USER_CANCELLED_WEBHOOK");
-                log.info("[PayOS] 🚫 Người dùng hủy thanh toán qua webhook");
+                log.info("[PayOS]  Người dùng hủy thanh toán qua webhook (orderCode={})",
+                        order != null ? order.getOrderCode() : "N/A");
             } else {
                 payment.setStatus(PaymentStatus.FAILED);
-                log.warn("[PayOS] ❌ Thanh toán thất bại hoặc không xác định");
+                log.warn("[PayOS] Thanh toán thất bại hoặc không xác định (orderCode={})",
+                        order != null ? order.getOrderCode() : "N/A");
             }
 
             paymentRepository.save(payment);
@@ -192,6 +199,16 @@ public class PayOSServiceImpl implements PayOSService {
     }
 
     // ==== Helpers ====
+
+    /** Đảm bảo đơn hàng có mã nội bộ cố định (unique), nếu chưa có thì sinh và lưu. */
+    private String ensureOrderCode(Order order) {
+        if (order.getOrderCode() == null || order.getOrderCode().isBlank()) {
+            order.setOrderCode("ORD" + order.getOrderId());
+            orderRepository.save(order);
+        }
+        return order.getOrderCode();
+    }
+
     @SuppressWarnings("unchecked")
     private static Map<String, Object> asMap(Object o) {
         return (o instanceof Map<?, ?> m) ? (Map<String, Object>) m : Map.of();
@@ -221,7 +238,7 @@ public class PayOSServiceImpl implements PayOSService {
         return (int) v;
     }
 
-    // 🔹 Mô tả ngắn gọn, không vượt 25 ký tự (PayOS giới hạn)
+    // Mô tả ngắn gọn, không vượt 25 ký tự (PayOS giới hạn)
     private static String shortPayDesc(Long orderId, int attempt) {
         String s = "ORD#" + orderId + "-L" + attempt; // ví dụ: ORD#123-L2
         return s.length() <= 25 ? s : s.substring(0, 25);

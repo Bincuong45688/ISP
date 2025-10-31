@@ -38,4 +38,8 @@ public class Account {
 
     @Column(name = "otp_expired_at")
     private LocalDateTime otpExpiredAt;
+
+    @OneToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "customer_id")  // cột khóa ngoại trong bảng account
+    private Customer customer;
 }
