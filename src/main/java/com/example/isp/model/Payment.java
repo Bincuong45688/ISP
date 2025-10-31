@@ -1,36 +1,41 @@
 package com.example.isp.model;
 
+import com.example.isp.model.enums.PaymentStatus;
 import jakarta.persistence.*;
 import lombok.*;
+
 import java.math.BigDecimal;
-import java.time.Instant;
+import java.time.OffsetDateTime;
 
 @Entity
 @Table(name = "payments")
-@Getter @Setter
-@NoArgsConstructor @AllArgsConstructor @Builder
+@Getter @Setter @NoArgsConstructor @AllArgsConstructor @Builder
 public class Payment {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long paymentId;
+    private Long id;
 
-    @OneToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "order_id", nullable = false, unique = true)
+    @ManyToOne(optional = false, fetch = FetchType.LAZY)
+    @JoinColumn(name = "order_id", nullable = false)
     private Order order;
 
-    private String status;             // PENDING, PAID, FAILED
-    private String payosOrderCode;     // Mã đơn hàng bên PayOS (ở đây = orderId)
-    private String checkoutUrl;
-    private String qrCodeUrl;
+    private String provider;              // "PAYOS"
+    private String transactionId;
 
-    @Column(precision = 18, scale = 2)
+    @Column(precision = 15, scale = 2)
     private BigDecimal amount;
-    private Instant createdAt;
-    private Instant paidAt;
 
-    @PrePersist
-    public void prePersist() {
-        createdAt = Instant.now();
-    }
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private PaymentStatus status;         // PENDING, SUCCESS, FAILED
+
+    @Column(name = "payos_order_code", unique = true)
+    private Long payosOrderCode;          // orderCode gửi cho PayOS (duy nhất)
+
+    @Column(name = "checkout_url", length = 1024)
+    private String checkoutUrl;           // lưu để tái sử dụng link nếu cần
+
+    private OffsetDateTime createdAt;
+    private OffsetDateTime paidAt;
 }

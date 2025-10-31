@@ -29,6 +29,7 @@ public class CheckoutServiceImpl implements  CheckoutService{
     private final OrderDetailRepository orderDetailRepository;
     private final ChecklistRepository checklistRepository;
     private final ChecklistItemRepository checklistItemRepository;
+    private final VoucherRepository voucherRepository;
 
     @Override
     @Transactional
@@ -75,7 +76,7 @@ public class CheckoutServiceImpl implements  CheckoutService{
 
         order = orderRepository.save(order);
 
-        BigDecimal totalAmount = BigDecimal.ZERO;
+        BigDecimal subTotal = BigDecimal.ZERO;
         for (CartItem item : cartItems) {
             Product product = item.getProduct();
 
@@ -88,12 +89,36 @@ public class CheckoutServiceImpl implements  CheckoutService{
 
             orderDetailRepository.save(detail);
 
-            totalAmount = totalAmount.add(detail.getTotalPrice());
+            subTotal = subTotal.add(detail.getTotalPrice());
 
             // STEP 3: Trừ tồn kho sau khi tạo đơn
             updateStockAfterOrder(product, item.getQuantity());
         }
 
+        // STEP 4: Xử lý voucher từ cart (nếu có)
+        BigDecimal discountAmount = BigDecimal.ZERO;
+        Voucher appliedVoucher = null;
+        
+        if (cart.getVoucher() != null && cart.getDiscountAmount() != null) {
+            appliedVoucher = cart.getVoucher();
+            discountAmount = cart.getDiscountAmount();
+            
+            // Kiểm tra lại voucher có còn valid không
+            if (!appliedVoucher.isValid()) {
+                throw new RuntimeException("Voucher đã hết hiệu lực hoặc đã hết lượt sử dụng");
+            }
+            
+            // Lưu voucher vào order
+            order.setVoucher(appliedVoucher);
+            order.setDiscountAmount(discountAmount);
+            
+            // Tăng usedCount của voucher
+            appliedVoucher.setUsedCount(appliedVoucher.getUsedCount() + 1);
+            voucherRepository.save(appliedVoucher);
+        }
+        
+        // Tính tổng tiền sau khi trừ voucher
+        BigDecimal totalAmount = subTotal.subtract(discountAmount);
         order.setTotalAmount(totalAmount);
         orderRepository.save(order);
 
@@ -114,6 +139,9 @@ public class CheckoutServiceImpl implements  CheckoutService{
                 .phone(order.getPhone())
                 .address(order.getAddress())
                 .paymentMethod(order.getPaymentMethod())
+                .subTotal(subTotal)
+                .voucherCode(appliedVoucher != null ? appliedVoucher.getCode() : null)
+                .discountAmount(discountAmount)
                 .totalAmount(totalAmount)
                 .status(order.getStatus().name())
                 .createdAt(order.getCreatedAt())

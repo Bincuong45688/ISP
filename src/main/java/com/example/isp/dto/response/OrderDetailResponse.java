@@ -19,6 +19,8 @@ public class OrderDetailResponse {
     private Long orderId;
     private LocalDateTime orderDate;
     private OrderStatus orderStatus;
-    private BigDecimal totalPrice;
+    private String voucherCode;         // Mã voucher được áp dụng
+    private BigDecimal discountAmount;  // Số tiền được giảm
+    private BigDecimal totalPrice;      // Tổng tiền sau khi giảm
     private List<OrderItemResponse> items;
 }

@@ -40,6 +40,15 @@ public class Order {
     @Column(precision = 15, scale = 2)
     private BigDecimal totalAmount;
 
+    // Voucher được áp dụng cho đơn hàng này
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "voucher_id")
+    private Voucher voucher;
+
+    // Số tiền được giảm từ voucher
+    @Column(name = "discount_amount", precision = 15, scale = 2)
+    private BigDecimal discountAmount;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private OrderStatus status; // PENDING, CONFIRMED, DELIVERED, CANCELED

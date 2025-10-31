@@ -17,7 +17,10 @@ public class CheckoutResponse {
     private String phone;
     private String address;
     private String paymentMethod;
-    private BigDecimal totalAmount;
+    private BigDecimal subTotal;        // Tổng tiền trước khi giảm
+    private String voucherCode;         // Mã voucher được áp dụng
+    private BigDecimal discountAmount;  // Số tiền được giảm
+    private BigDecimal totalAmount;     // Tổng tiền sau khi giảm
     private String status;
     private String message;
     private LocalDateTime createdAt;
