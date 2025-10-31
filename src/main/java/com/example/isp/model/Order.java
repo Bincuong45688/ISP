@@ -27,9 +27,7 @@ public class Order {
     @ManyToOne
     @JoinColumn(name = "customer_id", nullable = false)
     private Customer customer;
-    //orderCode
-  
-    // Liên kết với shipper (người giao) 
+    // Liên kết với shipper (người giao)
     @ManyToOne
     @JoinColumn(name = "shipper_id")
     private Account shipper; // Role = SHIPPER

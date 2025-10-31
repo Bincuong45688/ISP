@@ -30,8 +30,8 @@ public class Payment {
     @Column(nullable = false, length = 16)
     private PaymentStatus status;         // PENDING, SUCCESS, FAILED
 
-    @Column(name = "payos_order_code", unique = true)
-    private Long payosOrderCode;          // orderCode gửi cho PayOS (duy nhất)
+    @Column(name = "payos_order_code", unique = true, length = 255)
+    private String payosOrderCode;  // orderCode gửi cho PayOS (trùng với OrderCode)
 
     @Column(name = "checkout_url", length = 1024)
     private String checkoutUrl;           // lưu để tái sử dụng link nếu cần
