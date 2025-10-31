@@ -1,4 +1,4 @@
-package com.example.isp.dto;
+package com.example.isp.dto.response;
 
 import com.example.isp.model.enums.Unit;
 import lombok.*;

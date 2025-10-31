@@ -1,8 +1,8 @@
 package com.example.isp.controller;
 
-import com.example.isp.dto.CreateUserChecklistItemRequest;
-import com.example.isp.dto.UpdateUserChecklistItemRequest;
-import com.example.isp.dto.UserChecklistItemDTO;
+import com.example.isp.dto.request.CreateUserChecklistItemRequest;
+import com.example.isp.dto.request.UpdateUserChecklistItemRequest;
+import com.example.isp.dto.response.UserChecklistItemDTO;
 import com.example.isp.service.UserChecklistService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
