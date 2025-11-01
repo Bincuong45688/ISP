@@ -12,7 +12,7 @@ import java.util.List;
 @Getter @Setter
 @NoArgsConstructor @AllArgsConstructor
 @Builder
-@Table(name = "orders")
+@Table(name = "orders", uniqueConstraints = {@UniqueConstraint(columnNames = "order_code")})
 public class Order {
 
     @Id
@@ -20,11 +20,13 @@ public class Order {
     @Column(name = "order_id")
     private Long orderId;
 
+    @Column(name = "order_code", nullable = false, unique = true)
+    private String orderCode;
+
     // Liên kết với customer
     @ManyToOne
     @JoinColumn(name = "customer_id", nullable = false)
     private Customer customer;
-
     // Liên kết với shipper (người giao)
     @ManyToOne
     @JoinColumn(name = "shipper_id")
@@ -50,7 +52,7 @@ public class Order {
     private BigDecimal discountAmount;
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
+    @Column(nullable = false, length = 16)
     private OrderStatus status; // PENDING, CONFIRMED, DELIVERED, CANCELED
 
     private LocalDateTime createdAt;

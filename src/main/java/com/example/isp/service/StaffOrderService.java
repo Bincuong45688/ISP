@@ -36,7 +36,7 @@ public class StaffOrderService {
         Order order = orderRepository.findById(orderId)
                 .orElseThrow(() -> new RuntimeException("Order not found"));
 
-        if(order.getStatus() != OrderStatus.PENDING) {
+        if(order.getStatus() != OrderStatus.PAID) {
             throw new RuntimeException("Only pending orders can be confirmed");
         }
 

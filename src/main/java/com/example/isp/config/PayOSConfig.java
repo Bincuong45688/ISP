@@ -10,9 +10,9 @@ public class PayOSConfig {
     @Bean
     public PayOS payOS() {
         return new PayOS(
-                "49aeb8de-7480-46b5-b4bb-cbe897735fc2",
-                "b5f105fd-6c0e-497c-a54a-f4dcbc3218cc",
-                "cf03ed3941468d1c297b90f12ee209c0fcf3843c7f21929a78c73275f9c3a691"
+                "d8708707-a84f-4c27-8eed-f3311f732526",
+                "7e21969d-933d-4adf-be5b-a029657addb6",
+                "34da94dd94b714a393ce6476a7488e0333b0052bb1597cb2f80dbf30bbe492da"
         );
     }
 }

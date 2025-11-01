@@ -25,6 +25,7 @@ public class CheckoutServiceImpl implements  CheckoutService{
     private final CartRepository cartRepository;
     private final CartItemRepository cartItemRepository;
     private final ProductRepository productRepository;
+    private final CodeGenerator codeGenerator;
     private final OrderRepository orderRepository;
     private final OrderDetailRepository orderDetailRepository;
     private final ChecklistRepository checklistRepository;
@@ -57,7 +58,7 @@ public class CheckoutServiceImpl implements  CheckoutService{
             if(product.getStatus() != ProductStatus.AVAILABLE){
                 throw new RuntimeException("Sản phẩm" + product.getProductName() + "hiện không thể mua");
             }
-            
+
             checkStockAvailable(product, item.getQuantity());
         }
 
@@ -69,7 +70,8 @@ public class CheckoutServiceImpl implements  CheckoutService{
         order.setReceiverName(request.getFullName());
         order.setReceiverEmail(request.getEmail());
         order.setNote(request.getNote());
-        order.setPaymentMethod(request.getPaymentMethod()); // <— thêm dòng này
+        order.setOrderCode(codeGenerator.generateUniqueCode());
+        order.setPaymentMethod("BANK_TRANSFER"); // <— thêm dòng này
         order.setCreatedAt(LocalDateTime.now());
         order.setStatus(OrderStatus.PENDING);
         order.setTotalAmount(BigDecimal.ZERO);
@@ -134,6 +136,7 @@ public class CheckoutServiceImpl implements  CheckoutService{
 
         return CheckoutResponse.builder()
                 .orderId(order.getOrderId())
+                .orderCode(order.getOrderCode())
                 .receiverName(order.getReceiverName())
                 .email(order.getReceiverEmail())
                 .phone(order.getPhone())
@@ -145,7 +148,7 @@ public class CheckoutServiceImpl implements  CheckoutService{
                 .totalAmount(totalAmount)
                 .status(order.getStatus().name())
                 .createdAt(order.getCreatedAt())
-                .message("Đặt hàng thành công")
+                .message("Đặt hàng thành công, Vui lòng tiếp tục thanh toán để hoàn tất đơn hàng.")
                 .build();
     }
 
