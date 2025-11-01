@@ -24,6 +24,7 @@ public class CartServiceImpl implements CartService {
     private final CartItemRepository cartItemRepository;
     private final CustomerRepository customerRepository;
     private final ProductRepository productRepository;
+    private final VoucherRepository voucherRepository;
 
     // === Lấy hoặc tạo giỏ hàng đang mở ===
     private Cart getOpenCart(Long customerId) {
@@ -147,6 +148,63 @@ public class CartServiceImpl implements CartService {
         cartItemRepository.deleteAll(cartItemRepository.findByCart(cart));
     }
 
+    // === Apply voucher vào giỏ hàng ===
+    @Override
+    public CartResponse applyVoucher(Long customerId, String voucherCode) {
+        Cart cart = getOpenCart(customerId);
+        List<CartItem> items = cartItemRepository.findByCart(cart);
+        
+        // Tìm voucher theo code
+        Voucher voucher = voucherRepository.findByCode(voucherCode.toUpperCase())
+                .orElseThrow(() -> new RuntimeException("Voucher không tồn tại: " + voucherCode));
+        
+        // Kiểm tra voucher còn valid không
+        if (!voucher.isValid()) {
+            String reason = !voucher.getIsActive() ? "Voucher đã bị vô hiệu hóa" :
+                           java.time.LocalDateTime.now().isBefore(voucher.getStartDate()) ? "Voucher chưa có hiệu lực" :
+                           java.time.LocalDateTime.now().isAfter(voucher.getEndDate()) ? "Voucher đã hết hạn" :
+                           "Voucher đã hết lượt sử dụng";
+            throw new RuntimeException(reason);
+        }
+        
+        // Tính subTotal
+        BigDecimal subTotal = items.stream()
+                .map(i -> i.getProduct().getPrice().multiply(BigDecimal.valueOf(i.getQuantity())))
+                .reduce(ZERO, BigDecimal::add);
+        
+        // Kiểm tra minimum order amount
+        if (!voucher.canBeUsedForAmount(subTotal)) {
+            throw new RuntimeException(
+                String.format("Đơn hàng tối thiểu phải đạt %s VND để sử dụng voucher này", 
+                    voucher.getMinOrderAmount())
+            );
+        }
+        
+        // Tính discount amount
+        BigDecimal discountAmount = voucher.calculateDiscount(subTotal);
+        
+        // Lưu voucher và discount vào cart
+        cart.setVoucher(voucher);
+        cart.setDiscountAmount(discountAmount);
+        cartRepository.save(cart);
+        
+        return toCartResponse(cart, items);
+    }
+
+    // === Remove voucher khỏi giỏ hàng ===
+    @Override
+    public CartResponse removeVoucher(Long customerId) {
+        Cart cart = getOpenCart(customerId);
+        List<CartItem> items = cartItemRepository.findByCart(cart);
+        
+        // Xóa voucher và discount
+        cart.setVoucher(null);
+        cart.setDiscountAmount(null);
+        cartRepository.save(cart);
+        
+        return toCartResponse(cart, items);
+    }
+
     // === Mapper trả về dữ liệu đầy đủ cho FE ===
     private CartResponse toCartResponse(Cart cart, List<CartItem> items) {
         List<CartItemResponse> itemResponses = items.stream().map(i -> {
@@ -169,6 +227,10 @@ public class CartServiceImpl implements CartService {
                 .map(CartItemResponse::getLineTotal)
                 .reduce(ZERO, BigDecimal::add);
 
+        // Tính discount và final amount
+        BigDecimal discountAmount = cart.getDiscountAmount() != null ? cart.getDiscountAmount() : ZERO;
+        BigDecimal finalAmount = subTotal.subtract(discountAmount);
+        
         return CartResponse.builder()
                 .cartId(cart.getCartId())
                 .cartStatus(cart.getCartStatus().name())
@@ -177,6 +239,9 @@ public class CartServiceImpl implements CartService {
                 .items(itemResponses)
                 .totalItems(itemResponses.size())
                 .subTotal(subTotal)
+                .voucherCode(cart.getVoucher() != null ? cart.getVoucher().getCode() : null)
+                .discountAmount(discountAmount)
+                .finalAmount(finalAmount)
                 .currency("VND")
                 .build();
     }

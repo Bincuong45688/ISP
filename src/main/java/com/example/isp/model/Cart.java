@@ -4,6 +4,7 @@ import com.example.isp.model.enums.CartStatus;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 @Entity
@@ -24,6 +25,15 @@ public class Cart {
     @Enumerated(EnumType.STRING)
     @Column(name = "cart_status", length = 50)
     private CartStatus cartStatus;
+
+    // FK -> Voucher(voucher_id) - voucher được áp dụng cho cart này
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "voucher_id")
+    private Voucher voucher;
+
+    // Số tiền được giảm từ voucher
+    @Column(name = "discount_amount", precision = 15, scale = 2)
+    private BigDecimal discountAmount;
 
     @OneToMany(mappedBy = "cart", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private List<CartItem> cartItems;

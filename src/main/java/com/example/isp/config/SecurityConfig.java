@@ -103,9 +103,16 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.POST,
                                 "/api/cart/items",             // thêm sp
                                 "/api/cart/items/remove",      // giảm/xóa sp
+                                "/api/cart/items/decrease",    // giảm số lượng
+                                "/api/cart/items/increase",    // tăng số lượng
                                 "/api/cart/clear",             // xóa sạch
-                                "/api/cart/checkout"           // checkout
+                                "/api/cart/apply-voucher",     // apply voucher
+                                "/api/cart/remove-voucher"     // remove voucher
                         ).hasAnyAuthority("ROLE_CUSTOMER","CUSTOMER")
+
+                        // ===== Checkout: CUSTOMER =====
+                        .requestMatchers(HttpMethod.POST, "/api/checkout")
+                        .hasAnyAuthority("ROLE_CUSTOMER", "CUSTOMER")
 
                         // ====== ORDER APIs ======
                         // CUSTOMER (đặt, xem, hủy đơn)

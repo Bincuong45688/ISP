@@ -19,7 +19,9 @@ public class OrderResponse {
     private String receiverName;
     private String phone;
     private String address;
-    private BigDecimal totalPrice;
+    private String voucherCode;         // Mã voucher được áp dụng
+    private BigDecimal discountAmount;  // Số tiền được giảm
+    private BigDecimal totalPrice;      // Tổng tiền sau khi giảm
     private String note;
     private OrderStatus status;
 }

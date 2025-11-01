@@ -10,5 +10,9 @@ public interface CartService {
     void clearCart(Long customerId);
     CartResponse decreaseItem(Long customerId, Long productId, int quantity);
     CartResponse increaseItem(Long customerId, Long productId, int quantity);
+    
+    // Voucher methods
+    CartResponse applyVoucher(Long customerId, String voucherCode);
+    CartResponse removeVoucher(Long customerId);
 
 }

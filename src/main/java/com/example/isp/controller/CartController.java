@@ -71,4 +71,18 @@ public class CartController {
     public void clearCart() {
         cartService.clearCart(currentCustomerId());
     }
+
+    // === Apply voucher vào giỏ hàng ===
+    @PostMapping("/apply-voucher")
+    @ResponseStatus(HttpStatus.OK)
+    public CartResponse applyVoucher(@RequestParam String voucherCode) {
+        return cartService.applyVoucher(currentCustomerId(), voucherCode);
+    }
+
+    // === Remove voucher khỏi giỏ hàng ===
+    @PostMapping("/remove-voucher")
+    @ResponseStatus(HttpStatus.OK)
+    public CartResponse removeVoucher() {
+        return cartService.removeVoucher(currentCustomerId());
+    }
 }

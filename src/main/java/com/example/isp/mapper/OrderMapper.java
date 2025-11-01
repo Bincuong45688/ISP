@@ -17,6 +17,8 @@ public interface OrderMapper {
     @Mapping(source = "receiverName", target = "receiverName")
     @Mapping(source = "phone", target = "phone")
     @Mapping(source = "address", target = "address")
+    @Mapping(source = "voucher.code", target = "voucherCode")
+    @Mapping(source = "discountAmount", target = "discountAmount")
     @Mapping(source = "totalAmount", target = "totalPrice")
     @Mapping(source = "note", target = "note")
     @Mapping(source = "status", target = "status")
@@ -25,7 +27,10 @@ public interface OrderMapper {
     // Map Order → OrderDetailResponse (cho viewOrderDetail)
     @Mapping(source = "createdAt", target = "orderDate")
     @Mapping(source = "status", target = "orderStatus")
+    @Mapping(source = "voucher.code", target = "voucherCode")
+    @Mapping(source = "discountAmount", target = "discountAmount")
     @Mapping(source = "totalAmount", target = "totalPrice")
+    @Mapping(target = "items", ignore = true)
     OrderDetailResponse toOrderDetailResponse(Order order);
 
 }
