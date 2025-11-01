@@ -15,7 +15,7 @@ public class CorsConfig implements WebMvcConfigurer {
                         "https://isp-7jpp.onrender.com",
                         "http://localhost:3000",
                         "http://localhost:*",  // Allow any localhost port
-                        "https://nhac-nho-viet-project-frontend-9tzt2jryz-nguyetnheees-projects.vercel.app",
+                        "https://nhac-nho-viet-project-frontend.vercel.app/",
                         "https://*.vercel.app"
                 )
                 // Cho phép tất cả method cần thiết
