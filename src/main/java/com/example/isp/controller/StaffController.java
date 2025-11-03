@@ -5,8 +5,10 @@ import com.example.isp.dto.request.LoginRequest;
 import com.example.isp.dto.request.RegisterStaffRequest;
 import com.example.isp.dto.request.UpdateStaffProfileRequest;
 import com.example.isp.dto.response.AuthResponse;
+import com.example.isp.dto.response.CustomerResponse;
 import com.example.isp.dto.response.ShipperResponse;
 import com.example.isp.dto.response.StaffResponse;
+import com.example.isp.service.CustomerService;
 import com.example.isp.service.StaffService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -22,6 +24,7 @@ import java.util.List;
 public class StaffController {
 
     private final StaffService staffService;
+    private final CustomerService customerService;
 
     @PostMapping("/register")
     public AuthResponse register(@RequestBody RegisterStaffRequest req) {
@@ -53,5 +56,10 @@ public class StaffController {
     @GetMapping("/shippers")
     public ResponseEntity<List<ShipperResponse>> getAllShippers() {
         return ResponseEntity.ok(staffService.getAllShippers());
+    }
+
+    @GetMapping("/customer")
+    public ResponseEntity<List<CustomerResponse>> getAllCustomers() {
+        return ResponseEntity.ok(staffService.getAllCustomer());
     }
 }
