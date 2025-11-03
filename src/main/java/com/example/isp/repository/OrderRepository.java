@@ -18,7 +18,7 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
 
     boolean existsByOrderCode(String orderCode);
 
-    @Lock(LockModeType.PESSIMISTIC_WRITE)
-    @Query("select o from Order o where o.orderId = :id")
-    Optional<Order> findByIdForUpdate(@Param("id") Long id);
+    @Query("SELECT o FROM Order o LEFT JOIN FETCH o.voucher")
+    List<Order> findAllWithVoucher();
+
 }
