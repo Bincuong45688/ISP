@@ -5,8 +5,10 @@ import com.example.isp.dto.request.LoginRequest;
 import com.example.isp.dto.request.RegisterStaffRequest;
 import com.example.isp.dto.request.UpdateStaffProfileRequest;
 import com.example.isp.dto.response.AuthResponse;
+import com.example.isp.dto.response.CustomerResponse;
 import com.example.isp.dto.response.ShipperResponse;
 import com.example.isp.dto.response.StaffResponse;
+import com.example.isp.mapper.CustomerMapper;
 import com.example.isp.mapper.ShipperMapper;
 import com.example.isp.mapper.StaffMapper;
 import com.example.isp.model.Account;
@@ -14,6 +16,7 @@ import com.example.isp.model.Shipper;
 import com.example.isp.model.Staff;
 import com.example.isp.model.enums.Role;
 import com.example.isp.repository.AccountRepository;
+import com.example.isp.repository.CustomerRepository;
 import com.example.isp.repository.ShipperRepository;
 import com.example.isp.repository.StaffRepository;
 import com.example.isp.security.JwtService;
@@ -33,8 +36,10 @@ public class StaffServiceImpl implements StaffService {
 
     private final StaffRepository staffRepo;
     private final AccountRepository accountRepo;
+    private final CustomerRepository customerRepo;
     private final ShipperRepository shipperRepo;
     private final ShipperMapper shipperMapper;
+    private final CustomerMapper customerMapper;
     private final StaffMapper staffMapper;
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
@@ -156,5 +161,14 @@ public class StaffServiceImpl implements StaffService {
                 .map(shipperMapper::toResponse)
                 .toList();
     }
+
+    @Override
+    public List<CustomerResponse> getAllCustomer() {
+        return customerRepo.findAll()
+                .stream()
+                .map(customerMapper::toResponse)
+                .toList();
+    }
+
 
 }

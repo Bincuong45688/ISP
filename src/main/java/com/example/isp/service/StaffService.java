@@ -5,6 +5,7 @@ import com.example.isp.dto.request.LoginRequest;
 import com.example.isp.dto.request.RegisterStaffRequest;
 import com.example.isp.dto.request.UpdateStaffProfileRequest;
 import com.example.isp.dto.response.AuthResponse;
+import com.example.isp.dto.response.CustomerResponse;
 import com.example.isp.dto.response.ShipperResponse;
 import com.example.isp.dto.response.StaffResponse;
 
@@ -17,4 +18,6 @@ public interface StaffService {
     StaffResponse updateProfile(String username, UpdateStaffProfileRequest req);
     void createShipper(CreateShipperRequest req);
     List<ShipperResponse> getAllShippers();
+
+    List<CustomerResponse> getAllCustomer();
 }
