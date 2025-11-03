@@ -24,7 +24,7 @@ public class StaffOrderService {
 
     // Xem tất cả đơn hàng trong hệ thống
     public List<OrderResponse> getAllOrders() {
-        return orderRepository.findAll()
+        return orderRepository.findAllWithVoucher()
                 .stream()
                 .map(orderMapper::toOrderResponse)
                 .toList();
