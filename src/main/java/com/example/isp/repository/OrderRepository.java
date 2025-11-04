@@ -13,9 +13,19 @@ import java.util.Optional;
 
 public interface OrderRepository extends JpaRepository<Order, Long> {
     List<Order> findByCustomerCustomerId(Long customerId);
-    List<Order> findByShipperUsername(String username);
     List<Order> findByShipperUsernameAndStatus(String username, OrderStatus status);
-    @Lock(LockModeType.PESSIMISTIC_WRITE)
-    @Query("select o from Order o where o.orderId = :id")
-    Optional<Order> findByIdForUpdate(@Param("id") Long id);
+
+    boolean existsByOrderCode(String orderCode);
+
+    @Query("""
+    SELECT o FROM Order o
+    LEFT JOIN FETCH o.voucher
+    WHERE o.customer.customerId = :customerId
+""")
+    List<Order> findByCustomerIdWithVoucher(@Param("customerId") Long customerId);
+
+
+    @Query("SELECT o FROM Order o LEFT JOIN FETCH o.voucher")
+    List<Order> findAllWithVoucher();
+
 }

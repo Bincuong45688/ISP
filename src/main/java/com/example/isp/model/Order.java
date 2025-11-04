@@ -1,8 +1,15 @@
 package com.example.isp.model;
 
 import com.example.isp.model.enums.OrderStatus;
+import com.fasterxml.jackson.annotation.JsonFormat;
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.annotations.CreationTimestamp;
+
+import com.fasterxml.jackson.annotation.JsonFormat;
+import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
+import jakarta.persistence.Column;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -12,7 +19,7 @@ import java.util.List;
 @Getter @Setter
 @NoArgsConstructor @AllArgsConstructor
 @Builder
-@Table(name = "orders")
+@Table(name = "orders", uniqueConstraints = {@UniqueConstraint(columnNames = "order_code")})
 public class Order {
 
     @Id
@@ -20,11 +27,13 @@ public class Order {
     @Column(name = "order_id")
     private Long orderId;
 
+    @Column(name = "order_code", nullable = false, unique = true)
+    private String orderCode;
+
     // Liên kết với customer
     @ManyToOne
     @JoinColumn(name = "customer_id", nullable = false)
     private Customer customer;
-
     // Liên kết với shipper (người giao)
     @ManyToOne
     @JoinColumn(name = "shipper_id")
@@ -50,9 +59,12 @@ public class Order {
     private BigDecimal discountAmount;
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
+    @Column(nullable = false, length = 16)
     private OrderStatus status; // PENDING, CONFIRMED, DELIVERED, CANCELED
 
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "Asia/Ho_Chi_Minh")
+    @CreationTimestamp
+    @Column(updatable = false)
     private LocalDateTime createdAt;
 
     @Column(name = "note")

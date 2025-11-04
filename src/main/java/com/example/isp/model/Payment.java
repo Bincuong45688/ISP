@@ -1,8 +1,10 @@
 package com.example.isp.model;
 
 import com.example.isp.model.enums.PaymentStatus;
+import com.fasterxml.jackson.annotation.JsonFormat;
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.annotations.CreationTimestamp;
 
 import java.math.BigDecimal;
 import java.time.OffsetDateTime;
@@ -27,15 +29,20 @@ public class Payment {
     private BigDecimal amount;
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
+    @Column(nullable = false, length = 16)
     private PaymentStatus status;         // PENDING, SUCCESS, FAILED
 
-    @Column(name = "payos_order_code", unique = true)
-    private Long payosOrderCode;          // orderCode gửi cho PayOS (duy nhất)
+    @Column(name = "payos_order_code", unique = true, length = 255)
+    private Long payosOrderCode;  // orderCode gửi cho PayOS (trùng với OrderCode)
 
     @Column(name = "checkout_url", length = 1024)
     private String checkoutUrl;           // lưu để tái sử dụng link nếu cần
-
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "Asia/Ho_Chi_Minh")
+    @CreationTimestamp
+    @Column(updatable = false)
     private OffsetDateTime createdAt;
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "Asia/Ho_Chi_Minh")
+    @CreationTimestamp
+    @Column(updatable = false)
     private OffsetDateTime paidAt;
 }

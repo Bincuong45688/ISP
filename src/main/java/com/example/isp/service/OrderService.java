@@ -1,7 +1,9 @@
 package com.example.isp.service;
 
+import com.example.isp.dto.request.CreateOrderRequest;
 import com.example.isp.dto.response.OrderDetailResponse;
 import com.example.isp.dto.response.OrderResponse;
+import com.example.isp.model.Customer;
 import com.example.isp.model.Order;
 import com.example.isp.model.enums.Role;
 
@@ -13,6 +15,11 @@ public interface OrderService {
     void cancleOrder(Long orderId, String username, Role role);
     void cancleOrderOfCurrentCustomer(Long orderId);
 
+    Order createOrder(CreateOrderRequest req, Customer customer);
+
     // Hoàn lại kho nếu đơn hàng bị huỷ
     void restoreStockAfterCancel(Order order);
+
+    void updateOrderStatusIfPaymentCanceled(Long orderId);
+
 }

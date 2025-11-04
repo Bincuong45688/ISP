@@ -1,6 +1,6 @@
 package com.example.isp.controller;
 
-import com.example.isp.dto.request.CreateChecklistItemRequest;
+import com.example.isp.dto.CreateChecklistItemRequest;
 import com.example.isp.dto.request.UpdateChecklistItemRequest;
 import com.example.isp.dto.response.ChecklistItemResponse;
 import com.example.isp.model.ChecklistItem;
