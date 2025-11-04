@@ -123,7 +123,7 @@ public class ShipperService {
                 .orElseThrow(() -> new RuntimeException("Order not found"));
 
         // Kiểm tra shipper có phải là người được gán không
-        if(!order.getShipper().getAccountId().equals(account.getAccountId())) {
+        if (!order.getShipper().getAccount().getAccountId().equals(account.getAccountId())) {
             throw new SecurityException("This order is not assigned to you");
         }
 
@@ -143,7 +143,8 @@ public class ShipperService {
         Order order = orderRepository.findById(orderId)
                 .orElseThrow(() -> new RuntimeException("Order not found"));
 
-        if(order.getShipper() == null || !order.getShipper().getUsername().equals(username)) {
+        if (order.getShipper() == null
+                || !order.getShipper().getAccount().getUsername().equals(username)) {
             throw new RuntimeException("You are not assigned to this order");
         }
 
@@ -158,21 +159,21 @@ public class ShipperService {
     // Đơn chờ xác nhận
     public List<OrderResponse> getPendingOrders() {
         String username = getCurrentUsername();
-        List<Order> orders = orderRepository.findByShipperUsernameAndStatus(username, OrderStatus.CONFIRMED);
+        List<Order> orders = orderRepository.findByShipperAccountUsernameAndStatus(username, OrderStatus.CONFIRMED);
         return orders.stream().map(orderMapper::toOrderResponse).toList();
     }
 
     // Đơn đang giao
     public List<OrderResponse> getActiveOrders() {
         String username = getCurrentUsername();
-        List<Order> orders = orderRepository.findByShipperUsernameAndStatus(username, OrderStatus.SHIPPING);
+        List<Order> orders = orderRepository.findByShipperAccountUsernameAndStatus(username, OrderStatus.SHIPPING);
         return orders.stream().map(orderMapper::toOrderResponse).toList();
     }
 
     // Đơn đã hoàn thành
     public List<OrderResponse> getCompletedOrders() {
         String username = getCurrentUsername();
-        List<Order> orders = orderRepository.findByShipperUsernameAndStatus(username, OrderStatus.COMPLETED);
+        List<Order> orders = orderRepository.findByShipperAccountUsernameAndStatus(username, OrderStatus.COMPLETED);
         return orders.stream().map(orderMapper::toOrderResponse).toList();
     }
 }

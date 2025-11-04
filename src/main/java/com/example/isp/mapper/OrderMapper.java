@@ -36,10 +36,8 @@ public interface OrderMapper {
     @Mapping(target = "items", ignore = true)
     OrderDetailResponse toOrderDetailResponse(Order order);
 
-    @Mapping(
-            target = "shipperName",
-            expression = "java(order.getShipper() != null && order.getShipper().getUsername() != null ? order.getShipper().getUsername() : null)"
-    )
+    @Mapping(source = "shipper.shipperName", target = "shipperName")
     AssignShipperResponse toAssignResponse(Order order);
+
 
 }

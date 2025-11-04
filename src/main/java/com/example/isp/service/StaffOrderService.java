@@ -50,6 +50,10 @@ public class StaffOrderService {
         Order order = orderRepository.findById(orderId)
                 .orElseThrow(() -> new RuntimeException("Order not found"));
 
+        if (order.getStatus() != OrderStatus.CONFIRMED) {
+            throw new IllegalStateException("Only CONFIRMED orders can be assigned to a shipper");
+        }
+
         // 2. Tìm Shipper theo ID
         Shipper shipper = shipperRepository.findById(shipperId)
                 .orElseThrow(() -> new RuntimeException("Shipper not found"));
@@ -62,7 +66,7 @@ public class StaffOrderService {
         }
 
         // 4. Gán vào order
-        order.setShipper(shipperAccount);
+        order.setShipper(shipper);
         return orderRepository.save(order);
     }
 

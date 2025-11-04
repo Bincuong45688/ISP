@@ -30,9 +30,10 @@ public class Order {
     @JoinColumn(name = "customer_id", nullable = false)
     private Customer customer;
     // Liên kết với shipper (người giao)
+
     @ManyToOne
     @JoinColumn(name = "shipper_id")
-    private Account shipper; // Role = SHIPPER
+    private Shipper shipper; // Role = SHIPPER
 
     @Column(nullable = false)
     private String address;
