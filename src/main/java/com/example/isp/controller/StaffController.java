@@ -4,10 +4,7 @@ import com.example.isp.dto.request.CreateShipperRequest;
 import com.example.isp.dto.request.LoginRequest;
 import com.example.isp.dto.request.RegisterStaffRequest;
 import com.example.isp.dto.request.UpdateStaffProfileRequest;
-import com.example.isp.dto.response.AuthResponse;
-import com.example.isp.dto.response.CustomerResponse;
-import com.example.isp.dto.response.ShipperResponse;
-import com.example.isp.dto.response.StaffResponse;
+import com.example.isp.dto.response.*;
 import com.example.isp.service.CustomerService;
 import com.example.isp.service.StaffService;
 import lombok.RequiredArgsConstructor;
@@ -59,7 +56,7 @@ public class StaffController {
     }
 
     @GetMapping("/customer")
-    public ResponseEntity<List<CustomerResponse>> getAllCustomers() {
+    public ResponseEntity<List<AllCustomerResponse>> getAllCustomers() {
         return ResponseEntity.ok(staffService.getAllCustomer());
     }
 }

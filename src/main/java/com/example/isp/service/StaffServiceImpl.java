@@ -4,10 +4,7 @@ import com.example.isp.dto.request.CreateShipperRequest;
 import com.example.isp.dto.request.LoginRequest;
 import com.example.isp.dto.request.RegisterStaffRequest;
 import com.example.isp.dto.request.UpdateStaffProfileRequest;
-import com.example.isp.dto.response.AuthResponse;
-import com.example.isp.dto.response.CustomerResponse;
-import com.example.isp.dto.response.ShipperResponse;
-import com.example.isp.dto.response.StaffResponse;
+import com.example.isp.dto.response.*;
 import com.example.isp.mapper.CustomerMapper;
 import com.example.isp.mapper.ShipperMapper;
 import com.example.isp.mapper.StaffMapper;
@@ -163,10 +160,10 @@ public class StaffServiceImpl implements StaffService {
     }
 
     @Override
-    public List<CustomerResponse> getAllCustomer() {
+    public List<AllCustomerResponse> getAllCustomer() {
         return customerRepo.findAll()
                 .stream()
-                .map(customerMapper::toResponse)
+                .map(customerMapper::toGetAllResponse)
                 .toList();
     }
 

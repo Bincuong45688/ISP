@@ -4,10 +4,7 @@ import com.example.isp.dto.request.CreateShipperRequest;
 import com.example.isp.dto.request.LoginRequest;
 import com.example.isp.dto.request.RegisterStaffRequest;
 import com.example.isp.dto.request.UpdateStaffProfileRequest;
-import com.example.isp.dto.response.AuthResponse;
-import com.example.isp.dto.response.CustomerResponse;
-import com.example.isp.dto.response.ShipperResponse;
-import com.example.isp.dto.response.StaffResponse;
+import com.example.isp.dto.response.*;
 
 import java.util.List;
 
@@ -19,5 +16,5 @@ public interface StaffService {
     void createShipper(CreateShipperRequest req);
     List<ShipperResponse> getAllShippers();
 
-    List<CustomerResponse> getAllCustomer();
+    List<AllCustomerResponse> getAllCustomer();
 }
