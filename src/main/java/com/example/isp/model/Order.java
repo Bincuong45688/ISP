@@ -6,11 +6,6 @@ import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
 
-import com.fasterxml.jackson.annotation.JsonFormat;
-import org.hibernate.annotations.CreationTimestamp;
-import org.hibernate.annotations.UpdateTimestamp;
-import jakarta.persistence.Column;
-
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -35,9 +30,10 @@ public class Order {
     @JoinColumn(name = "customer_id", nullable = false)
     private Customer customer;
     // Liên kết với shipper (người giao)
+
     @ManyToOne
     @JoinColumn(name = "shipper_id")
-    private Account shipper; // Role = SHIPPER
+    private Shipper shipper; // Role = SHIPPER
 
     @Column(nullable = false)
     private String address;

@@ -16,6 +16,4 @@ public interface PaymentRepository extends JpaRepository<Payment, Long> {
 
     /** Lấy Payment mới nhất của 1 orderId theo status */
     Optional<Payment> findTopByOrder_OrderIdAndStatusOrderByIdDesc(Long orderId, PaymentStatus status);
-    Optional<Payment> findTopByOrder_OrderIdOrderByIdDesc(Long orderId);
-
 }
