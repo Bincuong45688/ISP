@@ -20,6 +20,7 @@ public interface CustomerMapper {
     @Mapping(source = "account.username", target = "username")
     @Mapping(source = "account.email", target = "email")
     @Mapping(source = "account.phone", target = "phone")
+    @Mapping(source = "birthDate", target = "birthDate")
     CustomerResponse toResponse(Customer customer);
 
     @Mapping(target = "account", ignore = true)
