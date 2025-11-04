@@ -85,7 +85,7 @@ public class RitualServiceImpl implements RitualService {
         // Load ritual với checklists để cascade delete hoạt động đúng
         Ritual ritual = ritualRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Ritual not found: " + id));
-        
+
         // Với cascade = ALL và orphanRemoval = true, 
         // tất cả checklists sẽ tự động bị xóa khi xóa ritual
         ritualRepository.delete(ritual);

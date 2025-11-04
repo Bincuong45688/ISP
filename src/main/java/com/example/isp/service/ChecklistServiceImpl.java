@@ -35,8 +35,8 @@ public class ChecklistServiceImpl implements ChecklistService {
                 .orElseThrow(() -> new EntityNotFoundException("Checklist not found: " + id));
 
         // Nếu thay đổi ritual, cần xử lý orphanRemoval
-        if (checklist.getRitual() != null && 
-            !checklist.getRitual().equals(existing.getRitual())) {
+        if (checklist.getRitual() != null &&
+                !checklist.getRitual().equals(existing.getRitual())) {
             existing.setRitual(checklist.getRitual());
         }
         if (checklist.getItem() != null) {

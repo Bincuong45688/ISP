@@ -17,7 +17,6 @@ import java.util.List;
 @Builder
 public class OrderDetailResponse {
     private Long orderId;
-    private String orderCode;
     private LocalDateTime orderDate;
     private OrderStatus orderStatus;
     private String voucherCode;         // Mã voucher được áp dụng

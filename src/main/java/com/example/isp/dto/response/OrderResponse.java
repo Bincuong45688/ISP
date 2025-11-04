@@ -15,7 +15,6 @@ import java.time.LocalDateTime;
 @Builder
 public class OrderResponse {
     private Long orderId;
-    private String orderCode;
     private LocalDateTime orderDate;
     private String receiverName;
     private String phone;

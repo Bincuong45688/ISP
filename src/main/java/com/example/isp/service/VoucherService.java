@@ -128,8 +128,8 @@ public class VoucherService {
             voucher.setDiscountType(request.getDiscountType());
         }
         if (request.getDiscountValue() != null) {
-            if (request.getDiscountType() == DiscountType.PERCENTAGE 
-                && request.getDiscountValue().compareTo(new BigDecimal("100")) > 0) {
+            if (request.getDiscountType() == DiscountType.PERCENTAGE
+                    && request.getDiscountValue().compareTo(new BigDecimal("100")) > 0) {
                 throw new RuntimeException("Percentage discount cannot exceed 100%");
             }
             voucher.setDiscountValue(request.getDiscountValue());
@@ -183,16 +183,16 @@ public class VoucherService {
         // Validate voucher
         if (!voucher.isValid()) {
             String reason = !voucher.getIsActive() ? "Voucher is inactive" :
-                           LocalDateTime.now().isBefore(voucher.getStartDate()) ? "Voucher not yet active" :
-                           LocalDateTime.now().isAfter(voucher.getEndDate()) ? "Voucher has expired" :
-                           "Voucher usage limit reached";
+                    LocalDateTime.now().isBefore(voucher.getStartDate()) ? "Voucher not yet active" :
+                            LocalDateTime.now().isAfter(voucher.getEndDate()) ? "Voucher has expired" :
+                                    "Voucher usage limit reached";
             throw new RuntimeException(reason);
         }
 
         // Check minimum order amount
         if (!voucher.canBeUsedForAmount(request.getOrderAmount())) {
             throw new RuntimeException(
-                String.format("Minimum order amount is %s", voucher.getMinOrderAmount())
+                    String.format("Minimum order amount is %s", voucher.getMinOrderAmount())
             );
         }
 

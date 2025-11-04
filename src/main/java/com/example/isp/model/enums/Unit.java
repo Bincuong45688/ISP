@@ -34,7 +34,6 @@ public enum Unit {
     LUONG("Lượng");
 
 
-
     private final String displayName;
 
     Unit(String displayName) {
@@ -51,7 +50,7 @@ public enum Unit {
         if (value == null || value.isEmpty()) {
             return null;
         }
-        
+
         // Thử tìm theo enum name (BO, MAM, CAI)
         try {
             return Unit.valueOf(value.toUpperCase());

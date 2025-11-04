@@ -41,11 +41,11 @@ public class EmailService {
         try {
             MimeMessage message = mailSender.createMimeMessage();
             MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
-            
+
             helper.setTo(to);
             helper.setSubject(subject);
             helper.setText(htmlContent, true);
-            
+
             mailSender.send(message);
             log.info("HTML email sent successfully to: {}", to);
         } catch (MessagingException e) {
@@ -59,7 +59,7 @@ public class EmailService {
      */
     public void sendRitualReminder(String to, String userName, String ritualTitle, String reminderDate) {
         String subject = "Nhắc nhở: " + ritualTitle;
-        
+
         String htmlContent = String.format("""
             <!DOCTYPE html>
             <html>
@@ -95,7 +95,7 @@ public class EmailService {
             </body>
             </html>
             """, userName, ritualTitle, reminderDate);
-        
+
         sendHtmlEmail(to, subject, htmlContent);
     }
 }

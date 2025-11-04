@@ -1,7 +1,6 @@
 package com.example.isp.controller;
 
 import com.example.isp.dto.response.ChecklistResponse;
-import com.example.isp.dto.response.ChecklistResponseNew;
 import com.example.isp.dto.response.RitualDetailResponse;
 import com.example.isp.dto.response.RitualResponse;
 import com.example.isp.model.Checklist;
@@ -55,10 +54,10 @@ public class RitualController {
 
     // ==== Get danh sách checklist items theo ritualID ====
     @GetMapping("/{ritualId}/checklists")
-    public List<ChecklistResponseNew> getChecklistsByRitualId(@PathVariable Long ritualId) {
+    public List<ChecklistResponse> getChecklistsByRitualId(@PathVariable Long ritualId) {
         return checklistService.getByRitualId(ritualId)
                 .stream()
-                .map(c -> toNewChecklistResponse(c))
+                .map(c -> toChecklistResponse(c))
                 .toList();
     }
 
@@ -203,16 +202,6 @@ public class RitualController {
                 c.getChecklistId(),
                 c.getRitual() != null ? c.getRitual().getRitualId() : null,
                 c.getRitual() != null ? c.getRitual().getRitualName() : null,
-                c.getItem() != null ? c.getItem().getItemId() : null,
-                c.getItem() != null ? c.getItem().getItemName() : null,
-                c.getItem() != null ? c.getItem().getUnit() : null,
-                c.getQuantity(),
-                c.getCheckNote()
-        );
-    }
-    private ChecklistResponseNew toNewChecklistResponse(Checklist c) {
-        return new ChecklistResponseNew(
-                c.getChecklistId(),
                 c.getItem() != null ? c.getItem().getItemId() : null,
                 c.getItem() != null ? c.getItem().getItemName() : null,
                 c.getItem() != null ? c.getItem().getUnit() : null,

@@ -25,7 +25,6 @@ public class CheckoutServiceImpl implements  CheckoutService{
     private final CartRepository cartRepository;
     private final CartItemRepository cartItemRepository;
     private final ProductRepository productRepository;
-    private final CodeGenerator codeGenerator;
     private final OrderRepository orderRepository;
     private final OrderDetailRepository orderDetailRepository;
     private final ChecklistRepository checklistRepository;
@@ -70,8 +69,7 @@ public class CheckoutServiceImpl implements  CheckoutService{
         order.setReceiverName(request.getFullName());
         order.setReceiverEmail(request.getEmail());
         order.setNote(request.getNote());
-        order.setOrderCode(codeGenerator.generateUniqueCode());
-        order.setPaymentMethod("BANK_TRANSFER"); // <— thêm dòng này
+        order.setPaymentMethod(request.getPaymentMethod()); // <— thêm dòng này
         order.setCreatedAt(LocalDateTime.now());
         order.setStatus(OrderStatus.PENDING);
         order.setTotalAmount(BigDecimal.ZERO);
@@ -100,25 +98,25 @@ public class CheckoutServiceImpl implements  CheckoutService{
         // STEP 4: Xử lý voucher từ cart (nếu có)
         BigDecimal discountAmount = BigDecimal.ZERO;
         Voucher appliedVoucher = null;
-        
+
         if (cart.getVoucher() != null && cart.getDiscountAmount() != null) {
             appliedVoucher = cart.getVoucher();
             discountAmount = cart.getDiscountAmount();
-            
+
             // Kiểm tra lại voucher có còn valid không
             if (!appliedVoucher.isValid()) {
                 throw new RuntimeException("Voucher đã hết hiệu lực hoặc đã hết lượt sử dụng");
             }
-            
+
             // Lưu voucher vào order
             order.setVoucher(appliedVoucher);
             order.setDiscountAmount(discountAmount);
-            
+
             // Tăng usedCount của voucher
             appliedVoucher.setUsedCount(appliedVoucher.getUsedCount() + 1);
             voucherRepository.save(appliedVoucher);
         }
-        
+
         // Tính tổng tiền sau khi trừ voucher
         BigDecimal totalAmount = subTotal.subtract(discountAmount);
         order.setTotalAmount(totalAmount);
@@ -136,7 +134,6 @@ public class CheckoutServiceImpl implements  CheckoutService{
 
         return CheckoutResponse.builder()
                 .orderId(order.getOrderId())
-                .orderCode(order.getOrderCode())
                 .receiverName(order.getReceiverName())
                 .email(order.getReceiverEmail())
                 .phone(order.getPhone())
@@ -148,7 +145,7 @@ public class CheckoutServiceImpl implements  CheckoutService{
                 .totalAmount(totalAmount)
                 .status(order.getStatus().name())
                 .createdAt(order.getCreatedAt())
-                .message("Đặt hàng thành công, Vui lòng tiếp tục thanh toán để hoàn tất đơn hàng.")
+                .message("Đặt hàng thành công")
                 .build();
     }
 
