@@ -7,6 +7,7 @@ import com.example.isp.dto.response.OrderResponse;
 import com.example.isp.mapper.OrderMapper;
 import com.example.isp.model.*;
 import com.example.isp.model.enums.OrderStatus;
+import com.example.isp.model.enums.PaymentStatus;
 import com.example.isp.model.enums.Role;
 import com.example.isp.repository.*;
 import lombok.RequiredArgsConstructor;
@@ -31,6 +32,7 @@ public class OrderServiceImpl implements  OrderService {
     private final ChecklistItemRepository checklistItemRepository;
     private final CodeGenerator codeGenerator;
     private final OrderMapper orderMapper;
+    private final PaymentRepository paymentRepository;
 
     @Override
     public List<OrderResponse> getOrdersOfCurrentCustomer() {
@@ -172,4 +174,28 @@ public class OrderServiceImpl implements  OrderService {
             }
         }
     }
+    @Transactional
+    public void updateOrderStatusIfPaymentCanceled(Long orderId) {
+        // Lấy order từ DB
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new RuntimeException("Order not found"));
+
+        // Lấy payment mới nhất của đơn hàng
+        Payment latestPayment = paymentRepository.findTopByOrder_OrderIdOrderByIdDesc(orderId)
+                .orElse(null);
+
+        if (latestPayment == null) return;
+
+        // Nếu payment bị huỷ
+        if (latestPayment.getStatus() == PaymentStatus.CANCELED) {
+
+            // Nếu đơn hàng chưa huỷ thì mới cập nhật
+            if (order.getStatus() != OrderStatus.CANCELLED) {
+                restoreStockAfterCancel(order);  // hoàn kho
+                order.setStatus(OrderStatus.CANCELLED);
+                orderRepository.save(order);
+            }
+        }
+    }
+
 }
