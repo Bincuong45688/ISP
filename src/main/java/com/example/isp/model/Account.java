@@ -3,6 +3,7 @@ package com.example.isp.model;
 import com.example.isp.model.enums.Role;
 import jakarta.persistence.*;
 import lombok.*;
+import com.fasterxml.jackson.annotation.JsonFormat;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
