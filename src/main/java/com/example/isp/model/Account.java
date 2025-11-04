@@ -1,6 +1,7 @@
 package com.example.isp.model;
 
 import com.example.isp.model.enums.Role;
+import com.fasterxml.jackson.annotation.JsonFormat;
 import jakarta.persistence.*;
 import lombok.*;
 import com.fasterxml.jackson.annotation.JsonFormat;
