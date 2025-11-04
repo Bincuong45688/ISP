@@ -13,6 +13,7 @@ public interface OrderMapper {
     OrderMapper INSTANCE = Mappers.getMapper(OrderMapper.class);
 
     // Map Order -> OrderResponse (cho viewOrder)
+    @Mapping(source = "orderCode", target = "orderCode")
     @Mapping(source = "createdAt", target = "orderDate")
     @Mapping(source = "receiverName", target = "receiverName")
     @Mapping(source = "phone", target = "phone")
@@ -25,6 +26,7 @@ public interface OrderMapper {
     OrderResponse toOrderResponse(Order order);
 
     // Map Order → OrderDetailResponse (cho viewOrderDetail)
+    @Mapping(source = "orderCode", target = "orderCode")
     @Mapping(source = "createdAt", target = "orderDate")
     @Mapping(source = "status", target = "orderStatus")
     @Mapping(source = "voucher.code", target = "voucherCode")
