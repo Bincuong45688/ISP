@@ -63,7 +63,7 @@ public class UnitController {
         String searchTerm = q.toLowerCase();
         return Arrays.stream(Unit.values())
                 .filter(unit -> unit.getDisplayName().toLowerCase().contains(searchTerm) ||
-                              unit.name().toLowerCase().contains(searchTerm))
+                        unit.name().toLowerCase().contains(searchTerm))
                 .map(unit -> Map.of(
                         "name", unit.name(),
                         "displayName", unit.getDisplayName()

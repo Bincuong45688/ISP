@@ -1,8 +1,8 @@
 package com.example.isp.controller;
 
-import com.example.isp.dto.request.CreateUserChecklistItemRequest;
-import com.example.isp.dto.request.UpdateUserChecklistItemRequest;
-import com.example.isp.dto.response.UserChecklistItemDTO;
+import com.example.isp.dto.CreateUserChecklistItemRequest;
+import com.example.isp.dto.UpdateUserChecklistItemRequest;
+import com.example.isp.dto.UserChecklistItemDTO;
 import com.example.isp.service.UserChecklistService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -30,7 +30,7 @@ public class UserChecklistItemController {
     ) {
         try {
             List<UserChecklistItemDTO> items = userChecklistService.getUserChecklistItems(userChecklistId);
-            
+
             Map<String, Object> response = new HashMap<>();
             response.put("success", true);
             response.put("data", items);
@@ -51,7 +51,7 @@ public class UserChecklistItemController {
     public ResponseEntity<Map<String, Object>> getUserChecklistItemById(@PathVariable Long id) {
         try {
             UserChecklistItemDTO item = userChecklistService.getUserChecklistItemById(id);
-            
+
             Map<String, Object> response = new HashMap<>();
             response.put("success", true);
             response.put("data", item);
@@ -75,7 +75,7 @@ public class UserChecklistItemController {
     ) {
         try {
             UserChecklistItemDTO item = userChecklistService.createUserChecklistItem(request);
-            
+
             Map<String, Object> response = new HashMap<>();
             response.put("success", true);
             response.put("message", "User checklist item created successfully");
@@ -100,7 +100,7 @@ public class UserChecklistItemController {
     ) {
         try {
             UserChecklistItemDTO item = userChecklistService.updateUserChecklistItem(id, request);
-            
+
             Map<String, Object> response = new HashMap<>();
             response.put("success", true);
             response.put("message", "User checklist item updated successfully");
@@ -122,7 +122,7 @@ public class UserChecklistItemController {
     public ResponseEntity<Map<String, Object>> deleteUserChecklistItem(@PathVariable Long id) {
         try {
             userChecklistService.deleteUserChecklistItem(id);
-            
+
             Map<String, Object> response = new HashMap<>();
             response.put("success", true);
             response.put("message", "User checklist item deleted successfully");
@@ -146,7 +146,7 @@ public class UserChecklistItemController {
     ) {
         try {
             UserChecklistItemDTO item = userChecklistService.checkUserChecklistItem(id, checked);
-            
+
             Map<String, Object> response = new HashMap<>();
             response.put("success", true);
             response.put("message", checked ? "Item marked as completed" : "Item marked as incomplete");
