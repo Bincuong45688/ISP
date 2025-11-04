@@ -1,5 +1,6 @@
 package com.example.isp.mapper;
 
+import com.example.isp.dto.response.AssignShipperResponse;
 import com.example.isp.dto.response.OrderDetailResponse;
 import com.example.isp.dto.response.OrderResponse;
 import com.example.isp.model.Order;
@@ -34,5 +35,11 @@ public interface OrderMapper {
     @Mapping(source = "totalAmount", target = "totalPrice")
     @Mapping(target = "items", ignore = true)
     OrderDetailResponse toOrderDetailResponse(Order order);
+
+    @Mapping(
+            target = "shipperName",
+            expression = "java(order.getShipper() != null && order.getShipper().getUsername() != null ? order.getShipper().getUsername() : null)"
+    )
+    AssignShipperResponse toAssignResponse(Order order);
 
 }
