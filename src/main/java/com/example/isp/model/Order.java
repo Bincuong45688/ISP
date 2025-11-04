@@ -1,8 +1,10 @@
 package com.example.isp.model;
 
 import com.example.isp.model.enums.OrderStatus;
+import com.fasterxml.jackson.annotation.JsonFormat;
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.annotations.CreationTimestamp;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -55,6 +57,9 @@ public class Order {
     @Column(nullable = false, length = 16)
     private OrderStatus status; // PENDING, CONFIRMED, DELIVERED, CANCELED
 
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "Asia/Ho_Chi_Minh")
+    @CreationTimestamp
+    @Column(updatable = false)
     private LocalDateTime createdAt;
 
     @Column(name = "note")
