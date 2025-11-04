@@ -45,10 +45,12 @@ public class Account {
     @JoinColumn(name = "customer_id")  // cột khóa ngoại trong bảng account
     private Customer customer;
 
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "Asia/Ho_Chi_Minh")
     @CreationTimestamp
     @Column(updatable = false)
     private LocalDateTime createdAt;
 
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "Asia/Ho_Chi_Minh")
     @UpdateTimestamp
     private LocalDateTime updatedAt;
 }
