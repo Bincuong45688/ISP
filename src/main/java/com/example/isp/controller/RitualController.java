@@ -1,15 +1,15 @@
 package com.example.isp.controller;
 
-import com.example.isp.dto.request.CreateRitualRequest;
-import com.example.isp.dto.request.UpdateRitualRequest;
 import com.example.isp.dto.response.ChecklistResponse;
+import com.example.isp.dto.response.ChecklistResponseNew;
 import com.example.isp.dto.response.RitualDetailResponse;
 import com.example.isp.dto.response.RitualResponse;
+import com.example.isp.model.Checklist;
 import com.example.isp.model.Region;
 import com.example.isp.model.Ritual;
+import com.example.isp.service.ChecklistService;
 import com.example.isp.service.CloudinaryService;
 import com.example.isp.service.RitualService;
-import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -30,6 +30,7 @@ public class RitualController {
 
     private final RitualService ritualService;
     private final CloudinaryService cloudinaryService;
+    private final ChecklistService checklistService;
 
     // ==== List tất cả ====
     @GetMapping
@@ -40,16 +41,25 @@ public class RitualController {
                 .toList();
     }
 
-    // ==== Get by ID ====
+    // ==== Get by ID (với tất cả vật phẩm) ====
     @GetMapping("/{id}")
-    public RitualResponse get(@PathVariable Long id) {
+    public RitualDetailResponse get(@PathVariable Long id) {
+        return toDetailResponse(ritualService.getWithChecklists(id));
+    }
+
+    // ==== Get by ID (chỉ thông tin cơ bản, không có checklists) ====
+    @GetMapping("/{id}/simple")
+    public RitualResponse getSimple(@PathVariable Long id) {
         return toResponse(ritualService.get(id));
     }
 
-    // ==== Get by ID với Checklists ====
-    @GetMapping("/{id}/detail")
-    public RitualDetailResponse getDetail(@PathVariable Long id) {
-        return toDetailResponse(ritualService.getWithChecklists(id));
+    // ==== Get danh sách checklist items theo ritualID ====
+    @GetMapping("/{ritualId}/checklists")
+    public List<ChecklistResponseNew> getChecklistsByRitualId(@PathVariable Long ritualId) {
+        return checklistService.getByRitualId(ritualId)
+                .stream()
+                .map(c -> toNewChecklistResponse(c))
+                .toList();
     }
 
     // ==== Create (multipart/form-data với file upload) ====
@@ -184,6 +194,30 @@ public class RitualController {
                 r.getMeaning(),
                 r.getImageUrl(),
                 checklistResponses
+        );
+    }
+
+    // ==== Helper method để convert Checklist -> ChecklistResponse ====
+    private ChecklistResponse toChecklistResponse(Checklist c) {
+        return new ChecklistResponse(
+                c.getChecklistId(),
+                c.getRitual() != null ? c.getRitual().getRitualId() : null,
+                c.getRitual() != null ? c.getRitual().getRitualName() : null,
+                c.getItem() != null ? c.getItem().getItemId() : null,
+                c.getItem() != null ? c.getItem().getItemName() : null,
+                c.getItem() != null ? c.getItem().getUnit() : null,
+                c.getQuantity(),
+                c.getCheckNote()
+        );
+    }
+    private ChecklistResponseNew toNewChecklistResponse(Checklist c) {
+        return new ChecklistResponseNew(
+                c.getChecklistId(),
+                c.getItem() != null ? c.getItem().getItemId() : null,
+                c.getItem() != null ? c.getItem().getItemName() : null,
+                c.getItem() != null ? c.getItem().getUnit() : null,
+                c.getQuantity(),
+                c.getCheckNote()
         );
     }
 }
