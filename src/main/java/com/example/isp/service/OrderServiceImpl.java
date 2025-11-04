@@ -1,5 +1,6 @@
 package com.example.isp.service;
 
+import com.example.isp.dto.request.CreateOrderRequest;
 import com.example.isp.dto.response.OrderDetailResponse;
 import com.example.isp.dto.response.OrderItemResponse;
 import com.example.isp.dto.response.OrderResponse;
@@ -9,11 +10,13 @@ import com.example.isp.model.enums.OrderStatus;
 import com.example.isp.model.enums.Role;
 import com.example.isp.repository.*;
 import lombok.RequiredArgsConstructor;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Service
@@ -26,6 +29,7 @@ public class OrderServiceImpl implements  OrderService {
     private final OrderDetailRepository orderDetailRepository;
     private final ChecklistRepository checklistRepository;
     private final ChecklistItemRepository checklistItemRepository;
+    private final CodeGenerator codeGenerator;
     private final OrderMapper orderMapper;
 
     @Override
@@ -41,7 +45,7 @@ public class OrderServiceImpl implements  OrderService {
                 .orElseThrow(() -> new RuntimeException("Customer not found"));
 
         // 3. Lấy danh sách Order
-        List<Order> orders = orderRepository.findByCustomerCustomerId(customer.getCustomerId());
+        List<Order> orders = orderRepository.findByCustomerIdWithVoucher(customer.getCustomerId());
 
         // 4. Trả về
         return orders.stream()
@@ -116,6 +120,35 @@ public class OrderServiceImpl implements  OrderService {
         restoreStockAfterCancel(order);
         order.setStatus(OrderStatus.CANCELLED);
         orderRepository.save(order);
+    }
+
+    @Override
+    public Order createOrder(CreateOrderRequest req, Customer customer) {
+        Order order = new Order();
+
+        order.setCreatedAt(LocalDateTime.now());
+        order.setStatus(OrderStatus.PENDING);
+        order.setOrderCode(codeGenerator.generateUniqueCode());
+        order.setCustomer(customer);
+
+        // Gán thông tin người nhận từ request
+        order.setReceiverName(req.getFullName());
+        order.setReceiverEmail(req.getEmail());
+        order.setPhone(req.getPhone());
+        order.setAddress(req.getAddress());
+        order.setNote(req.getNote());
+
+        // Thiết lập thanh toán
+        order.setPaymentMethod("BANK_TRANSFER");
+        order.setTotalAmount(req.getTotalAmount());
+
+        try {
+            return orderRepository.save(order);
+        } catch (DataIntegrityViolationException e) {
+            // Nếu trùng orderCode (hiếm khi)
+            order.setOrderCode(codeGenerator.generateUniqueCode());
+            return orderRepository.save(order);
+        }
     }
 
     // Hoàn lại kho nếu đơn hàng bị huỷ

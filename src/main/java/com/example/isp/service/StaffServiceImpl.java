@@ -4,14 +4,16 @@ import com.example.isp.dto.request.CreateShipperRequest;
 import com.example.isp.dto.request.LoginRequest;
 import com.example.isp.dto.request.RegisterStaffRequest;
 import com.example.isp.dto.request.UpdateStaffProfileRequest;
-import com.example.isp.dto.response.AuthResponse;
-import com.example.isp.dto.response.StaffResponse;
+import com.example.isp.dto.response.*;
+import com.example.isp.mapper.CustomerMapper;
+import com.example.isp.mapper.ShipperMapper;
 import com.example.isp.mapper.StaffMapper;
 import com.example.isp.model.Account;
 import com.example.isp.model.Shipper;
 import com.example.isp.model.Staff;
 import com.example.isp.model.enums.Role;
 import com.example.isp.repository.AccountRepository;
+import com.example.isp.repository.CustomerRepository;
 import com.example.isp.repository.ShipperRepository;
 import com.example.isp.repository.StaffRepository;
 import com.example.isp.security.JwtService;
@@ -22,6 +24,8 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
+
 @Service
 @RequiredArgsConstructor
 @Transactional
@@ -29,7 +33,10 @@ public class StaffServiceImpl implements StaffService {
 
     private final StaffRepository staffRepo;
     private final AccountRepository accountRepo;
+    private final CustomerRepository customerRepo;
     private final ShipperRepository shipperRepo;
+    private final ShipperMapper shipperMapper;
+    private final CustomerMapper customerMapper;
     private final StaffMapper staffMapper;
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
@@ -143,4 +150,22 @@ public class StaffServiceImpl implements StaffService {
                 .build();
         shipperRepo.save(shipper);
     }
+
+    @Override
+    public List<ShipperResponse> getAllShippers() {
+        return shipperRepo.findAll()
+                .stream()
+                .map(shipperMapper::toResponse)
+                .toList();
+    }
+
+    @Override
+    public List<AllCustomerResponse> getAllCustomer() {
+        return customerRepo.findAll()
+                .stream()
+                .map(customerMapper::toGetAllResponse)
+                .toList();
+    }
+
+
 }

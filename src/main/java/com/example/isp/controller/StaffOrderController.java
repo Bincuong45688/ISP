@@ -1,6 +1,10 @@
 package com.example.isp.controller;
 
 
+import com.example.isp.dto.response.AssignShipperResponse;
+import com.example.isp.dto.response.OrderResponse;
+import com.example.isp.mapper.OrderMapper;
+import com.example.isp.model.Order;
 import com.example.isp.model.enums.Role;
 import com.example.isp.service.OrderService;
 import com.example.isp.service.StaffOrderService;
@@ -16,6 +20,7 @@ import org.springframework.web.bind.annotation.*;
 public class StaffOrderController {
 
     private final StaffOrderService staffOrderService;
+    private final OrderMapper orderMapper;
     private final OrderService orderService; // dùng để huỷ đơn nếu cần
 
     // Lấy toàn bộ đơn hàng
@@ -33,9 +38,9 @@ public class StaffOrderController {
 
     // Gán shipepr vào đơn
     @PutMapping("/{orderId}/assign/{shipperId}")
-    public ResponseEntity<?> assignOrder(@PathVariable Long orderId, @PathVariable Long shipperId) {
-        staffOrderService.assignShipper(orderId, shipperId);
-        return ResponseEntity.ok("Shipper assigned successfully");
+    public ResponseEntity<AssignShipperResponse> assignOrder(@PathVariable Long orderId, @PathVariable Long shipperId) {
+        Order order = staffOrderService.assignShipper(orderId, shipperId);
+        return ResponseEntity.ok(orderMapper.toAssignResponse(order));
     }
 
     // Hủy đơn (staff có thể huy bất kỳ đơn nào chưa giao)
