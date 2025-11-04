@@ -45,7 +45,7 @@ public class OrderServiceImpl implements  OrderService {
                 .orElseThrow(() -> new RuntimeException("Customer not found"));
 
         // 3. Lấy danh sách Order
-        List<Order> orders = orderRepository.findByCustomerCustomerId(customer.getCustomerId());
+        List<Order> orders = orderRepository.findByCustomerIdWithVoucher(customer.getCustomerId());
 
         // 4. Trả về
         return orders.stream()
