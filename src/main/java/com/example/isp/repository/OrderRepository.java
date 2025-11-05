@@ -1,5 +1,6 @@
 package com.example.isp.repository;
 
+import com.example.isp.dto.response.TopSellingProductResponse;
 import com.example.isp.model.Order;
 import com.example.isp.model.enums.OrderStatus;
 import jakarta.persistence.LockModeType;

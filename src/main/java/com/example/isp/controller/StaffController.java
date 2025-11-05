@@ -6,6 +6,7 @@ import com.example.isp.dto.request.RegisterStaffRequest;
 import com.example.isp.dto.request.UpdateStaffProfileRequest;
 import com.example.isp.dto.response.*;
 import com.example.isp.service.CustomerService;
+import com.example.isp.service.ProductReportService;
 import com.example.isp.service.StaffService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -59,4 +60,6 @@ public class StaffController {
     public ResponseEntity<List<AllCustomerResponse>> getAllCustomers() {
         return ResponseEntity.ok(staffService.getAllCustomer());
     }
+
+
 }
