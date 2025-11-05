@@ -4,8 +4,10 @@ import com.example.isp.dto.response.AssignShipperResponse;
 import com.example.isp.dto.response.OrderDetailResponse;
 import com.example.isp.dto.response.OrderResponse;
 import com.example.isp.model.Order;
+import org.mapstruct.AfterMapping;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
+import org.mapstruct.MappingTarget;
 import org.mapstruct.factory.Mappers;
 
 @Mapper(componentModel = "spring")
@@ -24,7 +26,9 @@ public interface OrderMapper {
     @Mapping(source = "totalAmount", target = "totalPrice")
     @Mapping(source = "note", target = "note")
     @Mapping(source = "status", target = "status")
+    @Mapping(source = "shipper.shipperName", target = "shipperName")
     OrderResponse toOrderResponse(Order order);
+
 
     // Map Order → OrderDetailResponse (cho viewOrderDetail)
     @Mapping(source = "orderCode", target = "orderCode")

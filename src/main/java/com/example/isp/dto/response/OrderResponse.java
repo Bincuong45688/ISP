@@ -1,5 +1,6 @@
 package com.example.isp.dto.response;
 
+import com.example.isp.model.Shipper;
 import com.example.isp.model.enums.OrderStatus;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -25,4 +26,6 @@ public class OrderResponse {
     private BigDecimal totalPrice;      // Tổng tiền sau khi giảm
     private String note;
     private OrderStatus status;
+
+    private String shipperName;
 }
