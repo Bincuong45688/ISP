@@ -42,7 +42,7 @@ public class SecurityConfig {
                         // Swagger
                         .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
                                        
-                        .requestMatchers("/api/staff/orders/top-selling").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/staff/orders/top-selling").permitAll()
                                        
                         // Auth public
                         .requestMatchers(HttpMethod.POST,
