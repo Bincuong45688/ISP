@@ -25,9 +25,12 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
+import java.util.Objects;
+import org.slf4j.Logger; import org.slf4j.LoggerFactory;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Objects;
 
 @Service
 @RequiredArgsConstructor
@@ -40,7 +43,8 @@ public class ShipperService {
     private final PasswordEncoder passwordEncoder;
     private final OrderRepository orderRepository;
     private final OrderMapper orderMapper;
-    private final CloudinaryService cloudinaryService; // đã có sẵn trong dự án của bạn
+    private final CloudinaryService cloudinaryService;
+    private static final Logger log = LoggerFactory.getLogger(ShipperService.class);
 
     private String getCurrentUsername() {
         return SecurityContextHolder.getContext().getAuthentication().getName();
@@ -110,6 +114,7 @@ public class ShipperService {
     }
 
     // Shipper chấp nhận đơn (CONFIRMED -> SHIPPING)
+
     @Transactional
     public void acceptOrder(Long orderId) {
         String username = getCurrentUsername();
@@ -129,11 +134,6 @@ public class ShipperService {
         if (order.getShipper() == null) {
             throw new IllegalStateException("Order has no assigned shipper");
         }
-        // Đúng người được gán (so sánh theo ID để chắc)
-        if (!order.getShipper().getAccountId().equals(account.getAccountId())) {
-            throw new SecurityException("This order is not assigned to you");
-        }
-
         // Chuyển trạng thái
         if (order.getStatus() != OrderStatus.CONFIRMED) {
             throw new IllegalStateException("Order is not in CONFIRMED state");
@@ -143,6 +143,7 @@ public class ShipperService {
         orderRepository.save(order);
     }
 
+    // ===== COMPLETE (khôi phục + RETURN SỚM) =====
     @Transactional
     public void completeOrder(Long orderId, String username, MultipartFile proofImage) {
         if (proofImage == null || proofImage.isEmpty()) {
@@ -167,15 +168,11 @@ public class ShipperService {
                 order.setStatus(OrderStatus.SHIPPING);
             }
         }
-        // 2) Nếu đã gán nhưng khác người:
         else if (!order.getShipper().getAccountId().equals(current.getAccountId())) {
             // - nếu đơn còn ở CONFIRMED: cho phép chuyển quyền (claim) cho shipper hiện tại
             if (order.getStatus() == OrderStatus.CONFIRMED) {
                 order.setShipper(current);
                 order.setStatus(OrderStatus.SHIPPING);
-            } else {
-                // - nếu đã SHIPPING bởi người khác: chặn để tránh “cướp đơn” khi đang giao
-                throw new RuntimeException("You are not the assigned shipper for this order");
             }
         }
 
@@ -195,8 +192,6 @@ public class ShipperService {
 
         orderRepository.save(order);
     }
-
-
 
 
     // Đơn chờ xác nhận (đối với shipper hiện tại)
