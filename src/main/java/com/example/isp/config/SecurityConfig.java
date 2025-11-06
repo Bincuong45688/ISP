@@ -121,7 +121,7 @@ public class SecurityConfig {
 
                         // STAFF (xác nhận, gán shipper, hủy)
                         .requestMatchers("/api/staff/orders/top-selling")
-                        .hasAnyAuthority("ROLE_CUSTOMER", "CUSTOMER", "ROLE_STAFF", "STAFF")  
+                        .hasAnyAuthority("CUSTOMER", "ROLE_STAFF", "STAFF")  
                                        
                         .requestMatchers("/api/staff/orders/**")
                         .hasAnyAuthority("ROLE_STAFF", "STAFF")
