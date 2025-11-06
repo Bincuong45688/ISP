@@ -41,38 +41,30 @@ public class PayOSServiceImpl implements PayOSService {
 
     /**
      * Tạo link thanh toán PayOS
-     * - payos_order_code (gửi PayOS) = Long, duy nhất, tự tăng an toàn.
-     * - order_code (nội bộ) = chuỗi hiển thị/đối soát (cố định theo Order).
      */
     @Override
     @Transactional
     public Map<String, String> createPaymentLink(Long orderId) {
-        // 1) Lấy đơn & đảm bảo có order_code nội bộ cố định
         Order order = orderRepository.findById(orderId)
                 .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy đơn hàng #" + orderId));
         String internalOrderCode = ensureOrderCode(order);
 
-        // 2) Chuẩn hóa dữ liệu
         int amountForPayOS = safeInt(order.getTotalAmount().longValue(), "amount");
-        String returnUrl = successUrl;
         String cancelUrlFull = cancelUrl + "?orderId=" + orderId;
 
-        // 3) Lấy mã PayOS (global, tăng dần, synchronized để tránh race-condition)
         long payosOrderCode = nextPayosOrderCode();
 
-        // 4) Gọi PayOS (SDK yêu cầu Long cho orderCode)
         PaymentData paymentData = PaymentData.builder()
                 .orderCode(payosOrderCode)
                 .amount(amountForPayOS)
-                .description(shortDesc(internalOrderCode)) // <= 25 ký tự
-                .returnUrl(returnUrl)
+                .description(shortDesc(internalOrderCode))
+                .returnUrl(successUrl)
                 .cancelUrl(cancelUrlFull)
                 .build();
 
         try {
             var response = payOS.createPaymentLink(paymentData);
 
-            // 5) Lưu Payment
             Payment payment = Payment.builder()
                     .order(order)
                     .provider("PAYOS")
@@ -84,7 +76,6 @@ public class PayOSServiceImpl implements PayOSService {
                     .build();
             paymentRepository.save(payment);
 
-            // 6) Trả cho FE
             Map<String, String> result = new HashMap<>();
             result.put("checkoutUrl", response.getCheckoutUrl());
             result.put("payosOrderCode", String.valueOf(payosOrderCode));
@@ -102,10 +93,8 @@ public class PayOSServiceImpl implements PayOSService {
     /**
      * Webhook từ PayOS:
      * - SUCCESS -> Payment.SUCCESS, Order.PAID
-     * - CANCEL  -> Payment.CANCELED
+     * - CANCEL  -> Payment.CANCELED + Order.CANCELLED
      * - else    -> Payment.FAILED
-     *
-     * Ghi chú: Chưa bật verify chữ ký (headerSignature) – có thể bổ sung nếu bạn bật xác thực webhook.
      */
     @Override
     @Transactional
@@ -140,11 +129,11 @@ public class PayOSServiceImpl implements PayOSService {
             Payment payment = opt.get();
             Order order = payment.getOrder();
 
-            String code = str(data.get("code"));       // "00" nếu success
-            String desc = str(data.get("desc"));       // "success" nếu success
-            String event = str(payload.get("event"));  // "payment.completed" | "payment.cancelled" ...
-            String status = str(data.get("status"));   // "PAID" | "CANCELLED" ...
-            String reference = str(data.get("reference")); // Mã tham chiếu ngân hàng
+            String code = str(data.get("code"));
+            String desc = str(data.get("desc"));
+            String event = str(payload.get("event"));
+            String status = str(data.get("status"));
+            String reference = str(data.get("reference"));
 
             boolean isSuccess = eq(code, "00") || eq(desc, "success") || eq(status, "PAID")
                     || eq(event, "payment.completed");
@@ -161,17 +150,21 @@ public class PayOSServiceImpl implements PayOSService {
                     order.setStatus(OrderStatus.PAID);
                     orderRepository.save(order);
                 }
-                log.info("[PayOS] SUCCESS -> Order {} (order_code={}) cập nhật PAID",
-                        order != null ? order.getOrderId() : null,
-                        order != null ? order.getOrderCode() : null);
+                log.info("[PayOS] SUCCESS -> Order {} cập nhật PAID", order.getOrderId());
 
             } else if (isCancelled) {
                 payment.setStatus(PaymentStatus.CANCELED);
                 if (isBlank(payment.getTransactionId())) {
                     payment.setTransactionId("USER_CANCELLED_WEBHOOK");
                 }
-                log.info("[PayOS] CANCELLED (order_code={})",
-                        order != null ? order.getOrderCode() : "N/A");
+
+                if (order != null && order.getStatus() != OrderStatus.CANCELLED) {
+                    order.setStatus(OrderStatus.CANCELLED);
+                    orderRepository.save(order);
+                    log.info("[PayOS] CANCELLED -> Order {} cập nhật CANCELLED", order.getOrderId());
+                } else {
+                    log.info("[PayOS] CANCELLED webhook -> order đã hủy trước đó hoặc null");
+                }
 
             } else {
                 payment.setStatus(PaymentStatus.FAILED);
@@ -196,25 +189,31 @@ public class PayOSServiceImpl implements PayOSService {
                 .findTopByOrder_OrderIdAndStatusOrderByIdDesc(orderId, PaymentStatus.PENDING);
         if (opt.isEmpty()) {
             log.info("[PayOS] userCancel: không còn payment PENDING cho orderId={}", orderId);
-            return;
+        } else {
+            Payment p = opt.get();
+            p.setStatus(PaymentStatus.CANCELED);
+            if (isBlank(p.getTransactionId())) {
+                p.setTransactionId("USER_CANCELLED_FE");
+            }
+            paymentRepository.save(p);
         }
-        Payment p = opt.get();
-        p.setStatus(PaymentStatus.CANCELED);
-        if (isBlank(p.getTransactionId())) {
-            p.setTransactionId("USER_CANCELLED_FE");
-        }
-        paymentRepository.save(p);
-        log.info("[PayOS] userCancel: cập nhật orderId={} -> CANCELED", orderId);
+
+        // Đồng bộ trạng thái Order
+        orderRepository.findById(orderId).ifPresent(order -> {
+            if (order.getStatus() != OrderStatus.CANCELLED &&
+                    order.getStatus() != OrderStatus.COMPLETED &&
+                    order.getStatus() != OrderStatus.SHIPPING) {
+                order.setStatus(OrderStatus.CANCELLED);
+                orderRepository.save(order);
+                log.info("[PayOS] userCancel: cập nhật Order {} -> CANCELLED", orderId);
+            } else {
+                log.info("[PayOS] userCancel: Order {} không được hủy (trạng thái={})", orderId, order.getStatus());
+            }
+        });
     }
 
     // ===================== Helpers =====================
 
-    /**
-     * Lấy payos_order_code mới:
-     * - Cố gắng +1 từ payment cuối cùng (global).
-     * - Nếu null/không hợp lệ, fallback sang epoch milli + suffix ngẫu nhiên để chắc chắn duy nhất.
-     * - Synchronized để tránh 2 thread cấp trùng trong cùng instance.
-     */
     private static final Object CODE_LOCK = new Object();
 
     private long nextPayosOrderCode() {
@@ -222,10 +221,7 @@ public class PayOSServiceImpl implements PayOSService {
             long base = paymentRepository.findTopByOrderByIdDesc()
                     .map(p -> p.getPayosOrderCode() == null ? 0L : p.getPayosOrderCode())
                     .orElse(0L);
-
             long candidate = (base > 0) ? base + 1 : System.currentTimeMillis();
-
-            // Thêm 1 chữ số ngẫu nhiên khi khởi tạo từ epoch để giảm xác suất trùng mili-giây hiếm hoi
             if (base <= 0) {
                 candidate = candidate * 10 + ThreadLocalRandom.current().nextInt(0, 10);
             }
@@ -233,7 +229,6 @@ public class PayOSServiceImpl implements PayOSService {
         }
     }
 
-    /** Đảm bảo order_code nội bộ cố định. */
     private String ensureOrderCode(Order order) {
         if (isBlank(order.getOrderCode())) {
             order.setOrderCode("ORD" + order.getOrderId());
@@ -268,7 +263,7 @@ public class PayOSServiceImpl implements PayOSService {
     }
 
     private static String shortDesc(String internalOrderCode) {
-        String s = "PAY " + internalOrderCode; // ví dụ: "PAY ORD123"
+        String s = "PAY " + internalOrderCode;
         return s.length() <= 25 ? s : s.substring(0, 25);
     }
 
