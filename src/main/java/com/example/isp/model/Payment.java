@@ -1,10 +1,8 @@
 package com.example.isp.model;
 
 import com.example.isp.model.enums.PaymentStatus;
-import com.fasterxml.jackson.annotation.JsonFormat;
 import jakarta.persistence.*;
 import lombok.*;
-import org.hibernate.annotations.CreationTimestamp;
 
 import java.math.BigDecimal;
 import java.time.OffsetDateTime;
@@ -37,12 +35,7 @@ public class Payment {
 
     @Column(name = "checkout_url", length = 1024)
     private String checkoutUrl;           // lưu để tái sử dụng link nếu cần
-    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "Asia/Ho_Chi_Minh")
-    @CreationTimestamp
-    @Column(updatable = false)
+
     private OffsetDateTime createdAt;
-    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "Asia/Ho_Chi_Minh")
-    @CreationTimestamp
-    @Column(updatable = false)
     private OffsetDateTime paidAt;
 }

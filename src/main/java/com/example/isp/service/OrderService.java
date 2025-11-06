@@ -19,7 +19,4 @@ public interface OrderService {
 
     // Hoàn lại kho nếu đơn hàng bị huỷ
     void restoreStockAfterCancel(Order order);
-
-    void updateOrderStatusIfPaymentCanceled(Long orderId);
-
 }

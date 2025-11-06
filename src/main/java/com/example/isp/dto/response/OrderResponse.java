@@ -1,5 +1,6 @@
 package com.example.isp.dto.response;
 
+import com.example.isp.model.Shipper;
 import com.example.isp.model.enums.OrderStatus;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -15,6 +16,7 @@ import java.time.LocalDateTime;
 @Builder
 public class OrderResponse {
     private Long orderId;
+    private String orderCode;
     private LocalDateTime orderDate;
     private String receiverName;
     private String phone;
@@ -24,4 +26,6 @@ public class OrderResponse {
     private BigDecimal totalPrice;      // Tổng tiền sau khi giảm
     private String note;
     private OrderStatus status;
+
+    private String shipperName;
 }

@@ -32,8 +32,6 @@ public class PayOSServiceImpl implements PayOSService {
     private final OrderRepository orderRepository;
     private final PaymentRepository paymentRepository;
     private final ObjectMapper objectMapper = new ObjectMapper();
-    private final OrderService orderService;
-
 
     @Value("${app.payments.successUrl}")
     private String successUrl;
@@ -142,11 +140,11 @@ public class PayOSServiceImpl implements PayOSService {
             Payment payment = opt.get();
             Order order = payment.getOrder();
 
-            String code = str(data.get("code"));        // "00" nếu success
-            String desc = str(data.get("desc"));        // "success" nếu success
-            String event = str(payload.get("event"));   // "payment.completed" | "payment.cancelled"
-            String status = str(data.get("status"));    // "PAID" | "CANCELLED"
-            String reference = str(data.get("reference"));
+            String code = str(data.get("code"));       // "00" nếu success
+            String desc = str(data.get("desc"));       // "success" nếu success
+            String event = str(payload.get("event"));  // "payment.completed" | "payment.cancelled" ...
+            String status = str(data.get("status"));   // "PAID" | "CANCELLED" ...
+            String reference = str(data.get("reference")); // Mã tham chiếu ngân hàng
 
             boolean isSuccess = eq(code, "00") || eq(desc, "success") || eq(status, "PAID")
                     || eq(event, "payment.completed");
@@ -154,101 +152,60 @@ public class PayOSServiceImpl implements PayOSService {
                     || eq(status, "CANCELLED") || eq(status, "cancelled")
                     || eq(desc, "cancelled");
 
-            // --- Gán trạng thái cho Payment ---
             if (isSuccess) {
                 payment.setStatus(PaymentStatus.SUCCESS);
                 payment.setPaidAt(OffsetDateTime.now());
                 if (!isBlank(reference)) payment.setTransactionId(reference);
+
+                if (order != null && order.getStatus() != OrderStatus.PAID) {
+                    order.setStatus(OrderStatus.PAID);
+                    orderRepository.save(order);
+                }
+                log.info("[PayOS] SUCCESS -> Order {} (order_code={}) cập nhật PAID",
+                        order != null ? order.getOrderId() : null,
+                        order != null ? order.getOrderCode() : null);
 
             } else if (isCancelled) {
                 payment.setStatus(PaymentStatus.CANCELED);
                 if (isBlank(payment.getTransactionId())) {
                     payment.setTransactionId("USER_CANCELLED_WEBHOOK");
                 }
+                log.info("[PayOS] CANCELLED (order_code={})",
+                        order != null ? order.getOrderCode() : "N/A");
 
             } else {
                 payment.setStatus(PaymentStatus.FAILED);
                 if (isBlank(payment.getTransactionId())) {
                     payment.setTransactionId("FAILED_WEBHOOK");
                 }
+                log.warn("[PayOS] FAILED/UNKNOWN (order_code={})",
+                        order != null ? order.getOrderCode() : "N/A");
             }
 
-            //  LƯU PAYMENT TRƯỚC
             paymentRepository.save(payment);
-
-// ✅ CẬP NHẬT ORDER THEO KẾT QUẢ
-            if (order != null) {
-                if (isSuccess && order.getStatus() != OrderStatus.PAID) {
-                    order.setStatus(OrderStatus.PAID);
-                    orderRepository.save(order);
-                    log.info("[PayOS] SUCCESS -> Order {} cập nhật PAID", order.getOrderId());
-                }
-
-                if (isCancelled) {
-                    if (order.getStatus() != OrderStatus.SHIPPING
-                            && order.getStatus() != OrderStatus.COMPLETED
-                            && order.getStatus() != OrderStatus.CANCELLED) {
-
-                        // Hoàn kho rồi hủy
-                        try { orderService.restoreStockAfterCancel(order); }
-                        catch (Exception ex) { log.warn("restoreStockAfterCancel lỗi: {}", ex.getMessage()); }
-
-                        order.setStatus(OrderStatus.CANCELLED); // 2 chữ L
-                        orderRepository.save(order);
-                        log.info("[PayOS] CANCELLED -> Order {} cập nhật CANCELLED", order.getOrderId());
-                    }
-                }
-            }
 
         } catch (Exception e) {
             log.error("[PayOS] Lỗi xử lý webhook: {}", e.getMessage(), e);
         }
     }
 
-
-
     @Override
     @Transactional
     public void userCancel(Long orderId) {
-        // 1) Tìm payment PENDING mới nhất của đơn
-        Optional<Payment> opt = paymentRepository
+        var opt = paymentRepository
                 .findTopByOrder_OrderIdAndStatusOrderByIdDesc(orderId, PaymentStatus.PENDING);
-
         if (opt.isEmpty()) {
             log.info("[PayOS] userCancel: không còn payment PENDING cho orderId={}", orderId);
             return;
         }
-
         Payment p = opt.get();
-        Order order = p.getOrder();
-
-        // 2) Đánh dấu payment = CANCELED và lưu trước
         p.setStatus(PaymentStatus.CANCELED);
         if (isBlank(p.getTransactionId())) {
             p.setTransactionId("USER_CANCELLED_FE");
         }
         paymentRepository.save(p);
         log.info("[PayOS] userCancel: cập nhật orderId={} -> CANCELED", orderId);
-
-        // 3) Cập nhật Order trực tiếp (không phụ thuộc 'latest payment')
-        if (order != null
-                && order.getStatus() != OrderStatus.CANCELLED
-                && order.getStatus() != OrderStatus.SHIPPING
-                && order.getStatus() != OrderStatus.COMPLETED) {
-
-            try {
-                // hoàn kho 1 lần
-                orderService.restoreStockAfterCancel(order);
-            } catch (Exception ex) {
-                log.warn("[PayOS] restoreStockAfterCancel lỗi: {}", ex.getMessage());
-            }
-
-            order.setStatus(OrderStatus.CANCELLED); // enum của bạn dùng 2 chữ L
-            orderRepository.save(order);
-            log.info("[PayOS] userCancel: Order {} -> CANCELLED", order.getOrderId());
-        }
     }
-
 
     // ===================== Helpers =====================
 

@@ -27,17 +27,17 @@ public class RitualReminderScheduler {
     @Scheduled(cron = "0 0 * * * *")
     public void sendRitualReminders() {
         log.info("Starting ritual reminder check...");
-        
+
         try {
             List<UserChecklistDTO> checklistsToNotify = userChecklistService.getChecklistsNeedingNotification();
-            
+
             if (checklistsToNotify.isEmpty()) {
                 log.info("No checklists need notification at this time");
                 return;
             }
-            
+
             log.info("Found {} checklists needing notification", checklistsToNotify.size());
-            
+
             for (UserChecklistDTO checklist : checklistsToNotify) {
                 try {
                     sendReminderEmail(checklist);
@@ -47,7 +47,7 @@ public class RitualReminderScheduler {
                     log.error("Failed to send reminder for checklist ID: {}", checklist.getUserChecklistId(), e);
                 }
             }
-            
+
             log.info("Ritual reminder check completed");
         } catch (Exception e) {
             log.error("Error during ritual reminder check", e);
@@ -61,21 +61,21 @@ public class RitualReminderScheduler {
         // Get user email from account
         // Note: You may need to adjust this based on your Account entity structure
         String userEmail = getUserEmail(checklist.getUserId());
-        
+
         if (userEmail == null || userEmail.isEmpty()) {
             log.warn("No email found for user ID: {}", checklist.getUserId());
             return;
         }
-        
-        String reminderDateStr = checklist.getReminderDate() != null 
-            ? checklist.getReminderDate().format(DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm"))
-            : "N/A";
-        
+
+        String reminderDateStr = checklist.getReminderDate() != null
+                ? checklist.getReminderDate().format(DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm"))
+                : "N/A";
+
         emailService.sendRitualReminder(
-            userEmail,
-            checklist.getUserName(),
-            checklist.getTitle(),
-            reminderDateStr
+                userEmail,
+                checklist.getUserName(),
+                checklist.getTitle(),
+                reminderDateStr
         );
     }
 
@@ -84,8 +84,8 @@ public class RitualReminderScheduler {
      */
     private String getUserEmail(Long userId) {
         return customerRepository.findById(userId)
-            .map(Customer::getAccount)
-            .map(account -> account.getEmail())
-            .orElse(null);
+                .map(Customer::getAccount)
+                .map(account -> account.getEmail())
+                .orElse(null);
     }
 }

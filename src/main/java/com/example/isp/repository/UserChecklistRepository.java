@@ -29,12 +29,12 @@ public interface UserChecklistRepository extends JpaRepository<UserChecklist, Lo
 
     // Find by user with filters
     @Query("SELECT uc FROM UserChecklist uc WHERE uc.user.customerId = :userId " +
-           "AND (:ritualId IS NULL OR uc.ritual.ritualId = :ritualId) " +
-           "AND (:title IS NULL OR LOWER(uc.title) LIKE LOWER(CONCAT('%', :title, '%')))")
+            "AND (:ritualId IS NULL OR uc.ritual.ritualId = :ritualId) " +
+            "AND (:title IS NULL OR LOWER(uc.title) LIKE LOWER(CONCAT('%', :title, '%')))")
     Page<UserChecklist> findByUserWithFilters(
-        @Param("userId") Long userId,
-        @Param("ritualId") Long ritualId,
-        @Param("title") String title,
-        Pageable pageable
+            @Param("userId") Long userId,
+            @Param("ritualId") Long ritualId,
+            @Param("title") String title,
+            Pageable pageable
     );
 }

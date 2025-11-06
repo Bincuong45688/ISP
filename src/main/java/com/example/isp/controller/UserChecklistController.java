@@ -84,11 +84,11 @@ public class UserChecklistController {
             String sortField = sort[0];
             String sortDirection = sort.length > 1 ? sort[1] : "desc";
             Sort.Direction direction = sortDirection.equalsIgnoreCase("asc") ? Sort.Direction.ASC : Sort.Direction.DESC;
-            
+
             Pageable pageable = PageRequest.of(page, size, Sort.by(direction, sortField));
-            
+
             Page<UserChecklistDTO> checklistPage = userChecklistService.getUserChecklists(userId, ritualId, title, pageable);
-            
+
             Map<String, Object> response = new HashMap<>();
             response.put("success", true);
             response.put("data", checklistPage.getContent());
@@ -96,7 +96,7 @@ public class UserChecklistController {
             response.put("totalItems", checklistPage.getTotalElements());
             response.put("totalPages", checklistPage.getTotalPages());
             response.put("pageSize", checklistPage.getSize());
-            
+
             return ResponseEntity.ok(response);
         } catch (Exception e) {
             Map<String, Object> response = new HashMap<>();
@@ -117,12 +117,12 @@ public class UserChecklistController {
     ) {
         try {
             String title = (String) updates.get("title");
-            LocalDateTime reminderDate = updates.get("reminderDate") != null 
-                ? LocalDateTime.parse((String) updates.get("reminderDate"))
-                : null;
-            
+            LocalDateTime reminderDate = updates.get("reminderDate") != null
+                    ? LocalDateTime.parse((String) updates.get("reminderDate"))
+                    : null;
+
             UserChecklistDTO checklist = userChecklistService.updateUserChecklist(id, title, reminderDate);
-            
+
             Map<String, Object> response = new HashMap<>();
             response.put("success", true);
             response.put("message", "User checklist updated successfully");
@@ -147,7 +147,7 @@ public class UserChecklistController {
     ) {
         try {
             UserChecklistItemDTO item = userChecklistService.updateUserChecklistItem(itemId, request);
-            
+
             Map<String, Object> response = new HashMap<>();
             response.put("success", true);
             response.put("message", "User checklist item updated successfully");
@@ -169,7 +169,7 @@ public class UserChecklistController {
     public ResponseEntity<Map<String, Object>> deleteUserChecklist(@PathVariable Long id) {
         try {
             userChecklistService.deleteUserChecklist(id);
-            
+
             Map<String, Object> response = new HashMap<>();
             response.put("success", true);
             response.put("message", "User checklist deleted successfully");
@@ -190,7 +190,7 @@ public class UserChecklistController {
     public ResponseEntity<Map<String, Object>> checkoutUserChecklist(@PathVariable Long id) {
         try {
             userChecklistService.checkoutUserChecklist(id);
-            
+
             Map<String, Object> response = new HashMap<>();
             response.put("success", true);
             response.put("message", "Checkout successful. Stock quantities have been updated.");
@@ -217,9 +217,9 @@ public class UserChecklistController {
             if (quantity == null || quantity <= 0) {
                 throw new RuntimeException("Quantity must be greater than 0");
             }
-            
+
             userChecklistService.addStock(itemId, quantity);
-            
+
             Map<String, Object> response = new HashMap<>();
             response.put("success", true);
             response.put("message", "Stock added successfully");

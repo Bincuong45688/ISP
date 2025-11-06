@@ -1,5 +1,6 @@
 package com.example.isp.repository;
 
+import com.example.isp.dto.response.TopSellingProductResponse;
 import com.example.isp.model.Order;
 import com.example.isp.model.enums.OrderStatus;
 import jakarta.persistence.LockModeType;
@@ -13,10 +14,19 @@ import java.util.Optional;
 
 public interface OrderRepository extends JpaRepository<Order, Long> {
     List<Order> findByCustomerCustomerId(Long customerId);
-    List<Order> findByShipperUsername(String username);
-    List<Order> findByShipperUsernameAndStatus(String username, OrderStatus status);
+
+    List<Order> findByShipperAccountUsernameAndStatus(String username, OrderStatus status);
+
 
     boolean existsByOrderCode(String orderCode);
+
+    @Query("""
+    SELECT o FROM Order o
+    LEFT JOIN FETCH o.voucher
+    WHERE o.customer.customerId = :customerId
+""")
+    List<Order> findByCustomerIdWithVoucher(@Param("customerId") Long customerId);
+
 
     @Query("SELECT o FROM Order o LEFT JOIN FETCH o.voucher")
     List<Order> findAllWithVoucher();

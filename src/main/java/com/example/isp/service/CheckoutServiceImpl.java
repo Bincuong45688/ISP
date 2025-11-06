@@ -100,25 +100,25 @@ public class CheckoutServiceImpl implements  CheckoutService{
         // STEP 4: Xử lý voucher từ cart (nếu có)
         BigDecimal discountAmount = BigDecimal.ZERO;
         Voucher appliedVoucher = null;
-        
+
         if (cart.getVoucher() != null && cart.getDiscountAmount() != null) {
             appliedVoucher = cart.getVoucher();
             discountAmount = cart.getDiscountAmount();
-            
+
             // Kiểm tra lại voucher có còn valid không
             if (!appliedVoucher.isValid()) {
                 throw new RuntimeException("Voucher đã hết hiệu lực hoặc đã hết lượt sử dụng");
             }
-            
+
             // Lưu voucher vào order
             order.setVoucher(appliedVoucher);
             order.setDiscountAmount(discountAmount);
-            
+
             // Tăng usedCount của voucher
             appliedVoucher.setUsedCount(appliedVoucher.getUsedCount() + 1);
             voucherRepository.save(appliedVoucher);
         }
-        
+
         // Tính tổng tiền sau khi trừ voucher
         BigDecimal totalAmount = subTotal.subtract(discountAmount);
         order.setTotalAmount(totalAmount);

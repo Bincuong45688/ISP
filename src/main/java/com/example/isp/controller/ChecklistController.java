@@ -1,8 +1,9 @@
 package com.example.isp.controller;
 
-import com.example.isp.dto.CreateChecklistRequest;
+import com.example.isp.dto.request.CreateChecklistRequest;
 import com.example.isp.dto.request.UpdateChecklistRequest;
 import com.example.isp.dto.response.ChecklistResponse;
+import com.example.isp.dto.response.ChecklistResponseNew;
 import com.example.isp.model.Checklist;
 import com.example.isp.model.ChecklistItem;
 import com.example.isp.model.Ritual;
@@ -16,7 +17,10 @@ import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/checklists")
@@ -124,4 +128,30 @@ public class ChecklistController {
                 c.getCheckNote()
         );
     }
+    // ==== Group checklist theo tên lễ hội (chỉ giữ vật phẩm, không có ritualId/ritualName) ====
+    @GetMapping("/grouped")
+    public Map<String, List<ChecklistResponseNew>> getGroupedByRitual() {
+        List<Checklist> checklists = checklistService.list();
+
+        // Gom nhóm theo tên lễ hội
+        return checklists.stream()
+                .collect(Collectors.groupingBy(
+                        c -> c.getRitual() != null ? c.getRitual().getRitualName() : "Không xác định",
+                        LinkedHashMap::new,
+                        Collectors.mapping(this::toResponseNew, Collectors.toList())
+                ));
+    }
+
+    // === Helper: map sang DTO mới (không chứa ritualId/ritualName) ===
+    private ChecklistResponseNew toResponseNew(Checklist c) {
+        return new ChecklistResponseNew(
+                c.getChecklistId(),
+                c.getItem() != null ? c.getItem().getItemId() : null,
+                c.getItem() != null ? c.getItem().getItemName() : null,
+                c.getItem() != null ? c.getItem().getUnit() : null,
+                c.getQuantity(),
+                c.getCheckNote()
+        );
+    }
+
 }

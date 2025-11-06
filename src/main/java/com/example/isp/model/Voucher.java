@@ -82,10 +82,10 @@ public class Voucher {
     // Helper methods
     public boolean isValid() {
         LocalDateTime now = LocalDateTime.now();
-        return isActive 
-            && now.isAfter(startDate) 
-            && now.isBefore(endDate)
-            && (usageLimit == null || usedCount < usageLimit);
+        return isActive
+                && now.isAfter(startDate)
+                && now.isBefore(endDate)
+                && (usageLimit == null || usedCount < usageLimit);
     }
 
     public boolean canBeUsedForAmount(BigDecimal orderAmount) {

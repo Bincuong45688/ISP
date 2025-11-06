@@ -1,10 +1,13 @@
 package com.example.isp.service;
 
-import com.example.isp.dto.request.CreateUserChecklistItemRequest;
+
 import com.example.isp.dto.request.CreateUserChecklistRequest;
+import com.example.isp.dto.request.CreateUserChecklistItemRequest;
 import com.example.isp.dto.request.UpdateUserChecklistItemRequest;
 import com.example.isp.dto.response.UserChecklistDTO;
 import com.example.isp.dto.response.UserChecklistItemDTO;
+
+
 import com.example.isp.model.*;
 import com.example.isp.repository.*;
 import jakarta.transaction.Transactional;
@@ -55,7 +58,7 @@ public class UserChecklistService {
 
         // Copy checklist items from ritual's checklist
         List<Checklist> ritualChecklists = checklistRepository.findByRitualId(request.getRitualId());
-        
+
         for (Checklist checklist : ritualChecklists) {
             UserChecklistItem item = UserChecklistItem.builder()
                     .userChecklist(userChecklist)
@@ -168,7 +171,7 @@ public class UserChecklistService {
     public void addStock(Long itemId, Integer quantity) {
         ChecklistItem item = checklistItemRepository.findById(itemId)
                 .orElseThrow(() -> new RuntimeException("Item not found with id: " + itemId));
-        
+
         Integer currentStock = item.getStockQuantity() != null ? item.getStockQuantity() : 0;
         item.setStockQuantity(currentStock + quantity);
         checklistItemRepository.save(item);
@@ -226,8 +229,8 @@ public class UserChecklistService {
             // Check if stock is sufficient
             if (currentStock < quantityToDeduct) {
                 throw new RuntimeException(
-                    String.format("Insufficient stock for item '%s'. Available: %d, Required: %d",
-                        item.getItemName(), currentStock, quantityToDeduct)
+                        String.format("Insufficient stock for item '%s'. Available: %d, Required: %d",
+                                item.getItemName(), currentStock, quantityToDeduct)
                 );
             }
 
@@ -301,7 +304,7 @@ public class UserChecklistService {
     public UserChecklistItemDTO checkUserChecklistItem(Long id, Boolean checked) {
         UserChecklistItem item = userChecklistItemRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("User checklist item not found with id: " + id));
-        
+
         item.setChecked(checked);
         item = userChecklistItemRepository.save(item);
         return convertItemToDTO(item);

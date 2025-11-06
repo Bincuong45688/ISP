@@ -253,8 +253,8 @@ public class CustomerServiceImpl implements CustomerService {
 
         // Nếu có email, cập nhật sang account
         Optional.ofNullable(((UpdateCustomerRequest) request).getEmail())
-                        .filter(email -> !email.isBlank())
-                        .ifPresent(account::setEmail);
+                .filter(email -> !email.isBlank())
+                .ifPresent(account::setEmail);
 
         // Nếu có phone, cập nhật sang account
         Optional.ofNullable(((UpdateCustomerRequest) request).getPhoneNumber())

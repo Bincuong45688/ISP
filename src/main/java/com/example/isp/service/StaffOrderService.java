@@ -45,10 +45,14 @@ public class StaffOrderService {
     }
 
     // Gán một shipper cụ thể cho đơn hàng và chuyển trạng thái sang SHIPPING.
-    public void assignShipper(Long orderId, Long shipperId) {
+    public Order assignShipper(Long orderId, Long shipperId) {
         // 1. Tìm Order
         Order order = orderRepository.findById(orderId)
                 .orElseThrow(() -> new RuntimeException("Order not found"));
+
+        if (order.getStatus() != OrderStatus.CONFIRMED) {
+            throw new IllegalStateException("Only CONFIRMED orders can be assigned to a shipper");
+        }
 
         // 2. Tìm Shipper theo ID
         Shipper shipper = shipperRepository.findById(shipperId)
@@ -62,9 +66,8 @@ public class StaffOrderService {
         }
 
         // 4. Gán vào order
-        order.setShipper(shipperAccount);
-        order.setStatus(OrderStatus.CONFIRMED);
-        orderRepository.save(order);
+        order.setShipper(shipper);
+        return orderRepository.save(order);
     }
 
 
