@@ -74,4 +74,14 @@ public class Order {
 
     @OneToMany(mappedBy = "order", cascade = CascadeType.ALL)
     private List<OrderDetail> orderDetails;
+
+    @Column(name = "proof_image_url")
+    private String proofImageUrl;
+
+    @Column(name = "proof_uploaded_at")
+    private LocalDateTime proofUploadedAt;
+
+    @Column(name = "proof_uploaded_by")
+    private String proofUploadedBy;
+
 }

@@ -1,4 +1,4 @@
-package com.example.isp.service.impl;
+package com.example.isp.service;
 
 import com.cloudinary.Cloudinary;
 import com.cloudinary.utils.ObjectUtils;
