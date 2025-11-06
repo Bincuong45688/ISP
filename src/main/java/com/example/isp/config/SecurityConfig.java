@@ -41,7 +41,9 @@ public class SecurityConfig {
 
                         // Swagger
                         .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
-
+                                       
+                        .requestMatchers("/api/staff/orders/top-selling").permitAll()
+                                       
                         // Auth public
                         .requestMatchers(HttpMethod.POST,
                                 "/api/customer/login", "/api/customer/register",
@@ -120,9 +122,6 @@ public class SecurityConfig {
                         .hasAnyAuthority("ROLE_CUSTOMER", "CUSTOMER")
 
                         // STAFF (xác nhận, gán shipper, hủy)
-                        .requestMatchers("/api/staff/orders/top-selling")
-                        .hasAnyAuthority("CUSTOMER", "ROLE_STAFF", "STAFF")  
-                                       
                         .requestMatchers("/api/staff/orders/**")
                         .hasAnyAuthority("ROLE_STAFF", "STAFF")
 
