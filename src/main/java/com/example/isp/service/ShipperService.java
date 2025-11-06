@@ -25,10 +25,10 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
-import java.util.Objects;
+
 import org.slf4j.Logger; import org.slf4j.LoggerFactory;
 
-import java.time.LocalDateTime;
+
 import java.util.List;
 import java.util.Objects;
 
@@ -125,7 +125,6 @@ public class ShipperService {
         if (account.getRole() != Role.SHIPPER) {
             throw new SecurityException("You are not authorized");
         }
-
         // Tìm order
         Order order = orderRepository.findById(orderId)
                 .orElseThrow(() -> new RuntimeException("Order not found"));
@@ -142,57 +141,53 @@ public class ShipperService {
         order.setStatus(OrderStatus.SHIPPING);
         orderRepository.save(order);
     }
-
-    // ===== COMPLETE (khôi phục + RETURN SỚM) =====
     @Transactional
     public void completeOrder(Long orderId, String username, MultipartFile proofImage) {
         if (proofImage == null || proofImage.isEmpty()) {
             throw new RuntimeException("Proof image is required");
         }
 
-        // Lấy đơn
+        // Lấy Order
         Order order = orderRepository.findById(orderId)
                 .orElseThrow(() -> new RuntimeException("Order not found"));
 
-        // Nạp account hiện tại từ principal (có thể là username hoặc email)
         Account current = accountRepository.findByUsername(username)
                 .orElseGet(() -> accountRepository.findByEmail(username)
                         .orElseThrow(() -> new RuntimeException("Current account not found")));
 
-        // --- QUY TẮC NHẬN ĐƠN NHẸ NHÀNG ---
-        // 1) Nếu chưa gán shipper: cho phép gán về shipper hiện tại (auto-claim)
-        if (order.getShipper() == null) {
-            order.setShipper(current);
-            // nếu vẫn chưa vào SHIPPING, đẩy sang SHIPPING luôn để hoàn tất
-            if (order.getStatus() == OrderStatus.CONFIRMED) {
-                order.setStatus(OrderStatus.SHIPPING);
-            }
-        }
-        else if (!order.getShipper().getAccountId().equals(current.getAccountId())) {
-            // - nếu đơn còn ở CONFIRMED: cho phép chuyển quyền (claim) cho shipper hiện tại
-            if (order.getStatus() == OrderStatus.CONFIRMED) {
-                order.setShipper(current);
-                order.setStatus(OrderStatus.SHIPPING);
-            }
-        }
+        Shipper currentShipper = shipperRepository.findByAccount(current)
+                .orElseThrow(() -> new RuntimeException("Shipper not found for current account"));
 
-        // 3) Chỉ cho phép hoàn tất khi đang SHIPPING (sau các bước trên, CONFIRMED đã được đẩy sang SHIPPING)
+        if (order.getShipper() == null) {
+            // auto-claim
+            order.setShipper(currentShipper);
+            if (order.getStatus() == OrderStatus.CONFIRMED) {
+                order.setStatus(OrderStatus.SHIPPING);
+            }
+        } else if (!Objects.equals(
+                order.getShipper().getAccount().getAccountId(),   // <-- đi qua getAccount()
+                current.getAccountId())) {
+
+            if (order.getStatus() == OrderStatus.CONFIRMED) {
+                order.setShipper(currentShipper);
+                order.setStatus(OrderStatus.SHIPPING);
+            }
+        }
         if (order.getStatus() != OrderStatus.SHIPPING) {
             throw new RuntimeException("Only SHIPPING orders can be completed");
         }
 
-        // 4) Upload ảnh POD
+        //  Upload POD
         String url = cloudinaryService.uploadImage(proofImage, "isp/pod");
 
-        // 5) Lưu POD + cập nhật trạng thái
+        //  Lưu POD + cập nhật trạng thái
         order.setProofImageUrl(url);
         order.setProofUploadedAt(java.time.LocalDateTime.now());
-        order.setProofUploadedBy(current.getUsername()); // lưu username chuẩn từ DB
+        order.setProofUploadedBy(current.getUsername());
         order.setStatus(OrderStatus.COMPLETED);
 
         orderRepository.save(order);
     }
-
 
     // Đơn chờ xác nhận (đối với shipper hiện tại)
     public List<OrderResponse> getPendingOrders() {
