@@ -34,8 +34,16 @@ public class UserChecklist {
     @Column(name = "reminder_date")
     private LocalDateTime reminderDate;
 
+    @Builder.Default
     @Column(name = "is_notified")
     private Boolean isNotified = false;
+
+    @Builder.Default
+    @Column(name = "is_active")
+    private Boolean isActive = true;
+
+    @Column(name = "deleted_at")
+    private LocalDateTime deletedAt;
 
     @OneToMany(mappedBy = "userChecklist", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<UserChecklistItem> items = new ArrayList<>();
@@ -47,6 +55,9 @@ public class UserChecklist {
         }
         if (isNotified == null) {
             isNotified = false;
+        }
+        if (isActive == null) {
+            isActive = true;
         }
     }
 }

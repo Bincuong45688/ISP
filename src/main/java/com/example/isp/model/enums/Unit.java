@@ -7,6 +7,7 @@ import java.util.Arrays;
 
 public enum Unit {
     String("String"),
+    s("Bó"),
     CON("Con"),
     CHEN("Chén"),
     LIT("Lít"),

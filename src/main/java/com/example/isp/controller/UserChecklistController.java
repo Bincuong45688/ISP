@@ -162,24 +162,32 @@ public class UserChecklistController {
     }
 
     /**
-     * Delete user checklist
+     * Delete user checklist (soft delete)
      * DELETE /api/user-checklists/{id}
      */
     @DeleteMapping("/{id}")
     public ResponseEntity<Map<String, Object>> deleteUserChecklist(@PathVariable Long id) {
-        try {
-            userChecklistService.deleteUserChecklist(id);
+        userChecklistService.deleteUserChecklist(id);
 
-            Map<String, Object> response = new HashMap<>();
-            response.put("success", true);
-            response.put("message", "User checklist deleted successfully");
-            return ResponseEntity.ok(response);
-        } catch (Exception e) {
-            Map<String, Object> response = new HashMap<>();
-            response.put("success", false);
-            response.put("message", "Failed to delete user checklist: " + e.getMessage());
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
-        }
+        Map<String, Object> response = new HashMap<>();
+        response.put("success", true);
+        response.put("message", "Xóa checklist thành công");
+        return ResponseEntity.ok(response);
+    }
+
+    /**
+     * Restore deleted user checklist
+     * PUT /api/user-checklists/{id}/restore
+     */
+    @PutMapping("/{id}/restore")
+    public ResponseEntity<Map<String, Object>> restoreUserChecklist(@PathVariable Long id) {
+        UserChecklistDTO checklist = userChecklistService.restoreUserChecklist(id);
+
+        Map<String, Object> response = new HashMap<>();
+        response.put("success", true);
+        response.put("message", "Khôi phục checklist thành công");
+        response.put("data", checklist);
+        return ResponseEntity.ok(response);
     }
 
     /**

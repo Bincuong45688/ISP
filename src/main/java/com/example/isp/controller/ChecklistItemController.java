@@ -66,11 +66,17 @@ public class ChecklistItemController {
         return toResponse(checklistItemService.update(id, patch));
     }
 
-    // ==== Delete ====
+    // ==== Delete (Soft Delete) ====
     @DeleteMapping("/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void delete(@PathVariable Long id) {
         checklistItemService.delete(id);
+    }
+
+    // ==== Restore ====
+    @PutMapping("/{id}/restore")
+    public ChecklistItemResponse restore(@PathVariable Long id) {
+        return toResponse(checklistItemService.restore(id));
     }
 
     // ==== Search theo tên ====
