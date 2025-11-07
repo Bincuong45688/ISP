@@ -19,10 +19,19 @@ public interface ChecklistItemRepository extends JpaRepository<ChecklistItem, Lo
     @Override
     Page<ChecklistItem> findAll(Specification<ChecklistItem> spec, Pageable pageable);
 
-    // Search theo tên
+    // Search theo tên (chỉ lấy active items)
     @Query("""
         select ci from ChecklistItem ci
         where lower(ci.itemName) like lower(concat('%', :keyword, '%'))
+        and ci.isActive = true
         """)
     List<ChecklistItem> searchByName(@Param("keyword") String keyword);
+
+    // Lấy tất cả items active
+    @Query("SELECT ci FROM ChecklistItem ci WHERE ci.isActive = true")
+    List<ChecklistItem> findAllActive();
+
+    // Tìm theo ID và active
+    @Query("SELECT ci FROM ChecklistItem ci WHERE ci.itemId = :id AND ci.isActive = true")
+    java.util.Optional<ChecklistItem> findByIdAndActive(@Param("id") Long id);
 }

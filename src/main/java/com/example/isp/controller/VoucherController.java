@@ -26,7 +26,7 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api/vouchers")
-@Transactional(readOnly = true)
+@Transactional(readOnly = false)
 @RequiredArgsConstructor
 public class VoucherController {
 
@@ -39,20 +39,13 @@ public class VoucherController {
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     public ResponseEntity<Map<String, Object>> createVoucher(@Valid @RequestBody CreateVoucherRequest request) {
-        try {
-            VoucherResponse voucher = voucherService.createVoucher(request);
+        VoucherResponse voucher = voucherService.createVoucher(request);
 
-            Map<String, Object> response = new HashMap<>();
-            response.put("success", true);
-            response.put("message", "Voucher created successfully");
-            response.put("data", voucher);
-            return ResponseEntity.status(HttpStatus.CREATED).body(response);
-        } catch (Exception e) {
-            Map<String, Object> response = new HashMap<>();
-            response.put("success", false);
-            response.put("message", "Failed to create voucher: " + e.getMessage());
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
-        }
+        Map<String, Object> response = new HashMap<>();
+        response.put("success", true);
+        response.put("message", "Tạo voucher thành công");
+        response.put("data", voucher);
+        return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
     /**
@@ -71,27 +64,20 @@ public class VoucherController {
             @RequestParam(defaultValue = "createdAt") String sortBy,
             @RequestParam(defaultValue = "DESC") Sort.Direction direction
     ) {
-        try {
-            Pageable pageable = PageRequest.of(page, size, Sort.by(direction, sortBy));
-            Page<VoucherResponse> voucherPage = voucherService.getVouchers(
-                    code, discountType, isActive, startDate, endDate, pageable
-            );
+        Pageable pageable = PageRequest.of(page, size, Sort.by(direction, sortBy));
+        Page<VoucherResponse> voucherPage = voucherService.getVouchers(
+                code, discountType, isActive, startDate, endDate, pageable
+        );
 
-            Map<String, Object> response = new HashMap<>();
-            response.put("success", true);
-            response.put("data", voucherPage.getContent());
-            response.put("currentPage", voucherPage.getNumber());
-            response.put("totalItems", voucherPage.getTotalElements());
-            response.put("totalPages", voucherPage.getTotalPages());
-            response.put("pageSize", voucherPage.getSize());
+        Map<String, Object> response = new HashMap<>();
+        response.put("success", true);
+        response.put("data", voucherPage.getContent());
+        response.put("currentPage", voucherPage.getNumber());
+        response.put("totalItems", voucherPage.getTotalElements());
+        response.put("totalPages", voucherPage.getTotalPages());
+        response.put("pageSize", voucherPage.getSize());
 
-            return ResponseEntity.ok(response);
-        } catch (Exception e) {
-            Map<String, Object> response = new HashMap<>();
-            response.put("success", false);
-            response.put("message", "Failed to get vouchers: " + e.getMessage());
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
-        }
+        return ResponseEntity.ok(response);
     }
 
     /**
@@ -100,19 +86,12 @@ public class VoucherController {
      */
     @GetMapping("/{id}")
     public ResponseEntity<Map<String, Object>> getVoucherById(@PathVariable Long id) {
-        try {
-            VoucherResponse voucher = voucherService.getVoucherById(id);
+        VoucherResponse voucher = voucherService.getVoucherById(id);
 
-            Map<String, Object> response = new HashMap<>();
-            response.put("success", true);
-            response.put("data", voucher);
-            return ResponseEntity.ok(response);
-        } catch (Exception e) {
-            Map<String, Object> response = new HashMap<>();
-            response.put("success", false);
-            response.put("message", "Voucher not found: " + e.getMessage());
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
-        }
+        Map<String, Object> response = new HashMap<>();
+        response.put("success", true);
+        response.put("data", voucher);
+        return ResponseEntity.ok(response);
     }
 
     /**
@@ -121,19 +100,12 @@ public class VoucherController {
      */
     @GetMapping("/code/{code}")
     public ResponseEntity<Map<String, Object>> getVoucherByCode(@PathVariable String code) {
-        try {
-            VoucherResponse voucher = voucherService.getVoucherByCode(code);
+        VoucherResponse voucher = voucherService.getVoucherByCode(code);
 
-            Map<String, Object> response = new HashMap<>();
-            response.put("success", true);
-            response.put("data", voucher);
-            return ResponseEntity.ok(response);
-        } catch (Exception e) {
-            Map<String, Object> response = new HashMap<>();
-            response.put("success", false);
-            response.put("message", "Voucher not found: " + e.getMessage());
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
-        }
+        Map<String, Object> response = new HashMap<>();
+        response.put("success", true);
+        response.put("data", voucher);
+        return ResponseEntity.ok(response);
     }
 
     /**
@@ -145,20 +117,13 @@ public class VoucherController {
             @PathVariable Long id,
             @Valid @RequestBody UpdateVoucherRequest request
     ) {
-        try {
-            VoucherResponse voucher = voucherService.updateVoucher(id, request);
+        VoucherResponse voucher = voucherService.updateVoucher(id, request);
 
-            Map<String, Object> response = new HashMap<>();
-            response.put("success", true);
-            response.put("message", "Voucher updated successfully");
-            response.put("data", voucher);
-            return ResponseEntity.ok(response);
-        } catch (Exception e) {
-            Map<String, Object> response = new HashMap<>();
-            response.put("success", false);
-            response.put("message", "Failed to update voucher: " + e.getMessage());
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
-        }
+        Map<String, Object> response = new HashMap<>();
+        response.put("success", true);
+        response.put("message", "Cập nhật voucher thành công");
+        response.put("data", voucher);
+        return ResponseEntity.ok(response);
     }
 
     /**
@@ -167,19 +132,12 @@ public class VoucherController {
      */
     @DeleteMapping("/{id}")
     public ResponseEntity<Map<String, Object>> deleteVoucher(@PathVariable Long id) {
-        try {
-            voucherService.deleteVoucher(id);
+        voucherService.deleteVoucher(id);
 
-            Map<String, Object> response = new HashMap<>();
-            response.put("success", true);
-            response.put("message", "Voucher deleted successfully");
-            return ResponseEntity.ok(response);
-        } catch (Exception e) {
-            Map<String, Object> response = new HashMap<>();
-            response.put("success", false);
-            response.put("message", "Failed to delete voucher: " + e.getMessage());
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
-        }
+        Map<String, Object> response = new HashMap<>();
+        response.put("success", true);
+        response.put("message", "Xóa voucher thành công");
+        return ResponseEntity.ok(response);
     }
 
     /**
@@ -188,19 +146,12 @@ public class VoucherController {
      */
     @PostMapping("/apply")
     public ResponseEntity<Map<String, Object>> applyVoucher(@Valid @RequestBody ApplyVoucherRequest request) {
-        try {
-            VoucherDiscountResponse discount = voucherService.applyVoucher(request);
+        VoucherDiscountResponse discount = voucherService.applyVoucher(request);
 
-            Map<String, Object> response = new HashMap<>();
-            response.put("success", true);
-            response.put("data", discount);
-            return ResponseEntity.ok(response);
-        } catch (Exception e) {
-            Map<String, Object> response = new HashMap<>();
-            response.put("success", false);
-            response.put("message", e.getMessage());
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
-        }
+        Map<String, Object> response = new HashMap<>();
+        response.put("success", true);
+        response.put("data", discount);
+        return ResponseEntity.ok(response);
     }
 
     /**
@@ -209,19 +160,12 @@ public class VoucherController {
      */
     @PostMapping("/confirm/{code}")
     public ResponseEntity<Map<String, Object>> confirmVoucherUsage(@PathVariable String code) {
-        try {
-            voucherService.confirmVoucherUsage(code);
+        voucherService.confirmVoucherUsage(code);
 
-            Map<String, Object> response = new HashMap<>();
-            response.put("success", true);
-            response.put("message", "Voucher usage confirmed");
-            return ResponseEntity.ok(response);
-        } catch (Exception e) {
-            Map<String, Object> response = new HashMap<>();
-            response.put("success", false);
-            response.put("message", "Failed to confirm voucher usage: " + e.getMessage());
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
-        }
+        Map<String, Object> response = new HashMap<>();
+        response.put("success", true);
+        response.put("message", "Xác nhận sử dụng voucher thành công");
+        return ResponseEntity.ok(response);
     }
 
     /**
@@ -230,19 +174,12 @@ public class VoucherController {
      */
     @GetMapping("/valid")
     public ResponseEntity<Map<String, Object>> getValidVouchers() {
-        try {
-            List<VoucherResponse> vouchers = voucherService.getValidVouchers();
+        List<VoucherResponse> vouchers = voucherService.getValidVouchers();
 
-            Map<String, Object> response = new HashMap<>();
-            response.put("success", true);
-            response.put("data", vouchers);
-            return ResponseEntity.ok(response);
-        } catch (Exception e) {
-            Map<String, Object> response = new HashMap<>();
-            response.put("success", false);
-            response.put("message", "Failed to get valid vouchers: " + e.getMessage());
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
-        }
+        Map<String, Object> response = new HashMap<>();
+        response.put("success", true);
+        response.put("data", vouchers);
+        return ResponseEntity.ok(response);
     }
 
     /**
@@ -251,18 +188,11 @@ public class VoucherController {
      */
     @PostMapping("/deactivate-expired")
     public ResponseEntity<Map<String, Object>> deactivateExpiredVouchers() {
-        try {
-            voucherService.deactivateExpiredVouchers();
+        voucherService.deactivateExpiredVouchers();
 
-            Map<String, Object> response = new HashMap<>();
-            response.put("success", true);
-            response.put("message", "Expired vouchers deactivated successfully");
-            return ResponseEntity.ok(response);
-        } catch (Exception e) {
-            Map<String, Object> response = new HashMap<>();
-            response.put("success", false);
-            response.put("message", "Failed to deactivate expired vouchers: " + e.getMessage());
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
-        }
+        Map<String, Object> response = new HashMap<>();
+        response.put("success", true);
+        response.put("message", "Vô hiệu hóa voucher hết hạn thành công");
+        return ResponseEntity.ok(response);
     }
 }

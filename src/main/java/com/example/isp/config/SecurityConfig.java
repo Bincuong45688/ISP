@@ -46,13 +46,17 @@ public class SecurityConfig {
                                        
                         // Auth public
                         .requestMatchers(HttpMethod.POST,
-                                "/api/customer/login", "/api/customer/register",
+                                "/api/customer/login",
+                                "/api/customer/register",
                                 "/api/customer/verify-email",
                                 "/api/customer/forgot-password",
                                 "/api/customer/verify-reset-otp",
                                 "/api/customer/reset-password",
-                                "/api/staff/login", "/api/staff/register",
+                                "/api/staff/login",
+                                "/api/staff/register",
+                                "/api/v1/blogs",
                                 "/api/shipper/login"
+
                         ).permitAll()
 
                         // Read public
@@ -63,16 +67,17 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/api/checklists/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/checklist-items/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/product-details/**").authenticated()
+                        .requestMatchers(HttpMethod.GET, "/api/v1/blogs").authenticated()
 
                         // Write: STAFF
                         .requestMatchers(HttpMethod.POST,
-                                "/api/categories/**", "/api/products/**", "/api/product-details/**", "/api/product-details/*/assign-checklists","/api/checklists/**","/api/checklist-items/**","/api/rituals/**", "/api/regions/**"
+                                "/api/categories/**", "/api/products/**", "/api/product-details/**", "/api/product-details/*/assign-checklists","/api/checklists/**","/api/v1/blogs","/api/checklist-items/**","/api/rituals/**", "/api/regions/**"
                         ).hasAnyAuthority("ROLE_STAFF","STAFF")
                         .requestMatchers(HttpMethod.PUT,
-                                "/api/categories/**", "/api/products/**", "/api/product-details/**","/api/checklists/**", "/aapi/checklist-items/**","/api/rituals/**","/api/regions/**"
+                                "/api/categories/**", "/api/products/**", "/api/product-details/**","/api/checklists/**", "/aapi/checklist-items/**","/api/rituals/**","/api/v1/blogs","/api/regions/**"
                         ).hasAnyAuthority("ROLE_STAFF","STAFF")
                         .requestMatchers(HttpMethod.DELETE,
-                                "/api/categories/**", "/api/products/**", "/api/product-details/**","/api/checklists/**","/api/checklist-items/**", "/api/rituals/**","/api/regions/**"
+                                "/api/categories/**", "/api/products/**", "/api/product-details/**","/api/checklists/**","/api/checklist-items/**", "/api/rituals/**","/api/regions/**","/api/v1/blogs"
                         ).hasAnyAuthority("ROLE_STAFF","STAFF")
 
                         // Uploads: STAFF
@@ -89,13 +94,17 @@ public class SecurityConfig {
 
                         // ===== Vouchers =====
                         // Staff can manage vouchers (CRUD)
-                        .requestMatchers(HttpMethod.POST, "/api/vouchers").hasAnyAuthority("ROLE_STAFF","STAFF")
-                        .requestMatchers(HttpMethod.PUT, "/api/vouchers/**").hasAnyAuthority("ROLE_STAFF","STAFF")
-                        .requestMatchers(HttpMethod.DELETE, "/api/vouchers/**").hasAnyAuthority("ROLE_STAFF","STAFF")
+                        .requestMatchers(HttpMethod.POST, "/api/vouchers").permitAll()
+                        .requestMatchers(HttpMethod.PUT, "/api/vouchers/**").permitAll()
+                        .requestMatchers(HttpMethod.DELETE, "/api/vouchers/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/vouchers/**").permitAll() // Anyone can view vouchers
                         // Customers can apply vouchers
-                        .requestMatchers(HttpMethod.POST, "/api/vouchers/apply").hasAnyAuthority("ROLE_CUSTOMER","CUSTOMER")
-                        .requestMatchers(HttpMethod.POST, "/api/vouchers/confirm/**").hasAnyAuthority("ROLE_CUSTOMER","CUSTOMER")
+                        .requestMatchers(HttpMethod.POST, "/api/vouchers/apply").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/vouchers/confirm/**").permitAll()
+
+
+//
+                        // Customers can apply vouchers
 
                         // ===== Cart: CUSTOMER =====
                         .requestMatchers(HttpMethod.GET,

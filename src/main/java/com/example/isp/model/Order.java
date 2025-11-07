@@ -46,7 +46,7 @@ public class Order {
     private BigDecimal totalAmount;
 
     // Voucher được áp dụng cho đơn hàng này
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "voucher_id")
     private Voucher voucher;
 

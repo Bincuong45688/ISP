@@ -23,6 +23,7 @@ import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
+@Transactional
 public class VoucherService {
 
     private final VoucherRepository voucherRepository;
@@ -34,32 +35,62 @@ public class VoucherService {
     @Transactional
     public VoucherResponse createVoucher(CreateVoucherRequest request) {
         // Validate code uniqueness
-        if (voucherRepository.existsByCode(request.getCode())) {
-            throw new RuntimeException("Voucher code already exists: " + request.getCode());
+        String upperCode = request.getCode().trim().toUpperCase();
+        if (voucherRepository.existsByCode(upperCode)) {
+            throw new IllegalArgumentException("Mã voucher đã tồn tại: " + upperCode);
         }
 
         // Validate dates
         if (request.getEndDate().isBefore(request.getStartDate())) {
-            throw new RuntimeException("End date must be after start date");
+            throw new IllegalArgumentException("Ngày kết thúc phải sau ngày bắt đầu");
+        }
+
+        if (request.getStartDate().isBefore(LocalDateTime.now().minusDays(1))) {
+            throw new IllegalArgumentException("Ngày bắt đầu không được là quá khứ");
+        }
+
+        // Validate discount value
+        if (request.getDiscountValue().compareTo(BigDecimal.ZERO) <= 0) {
+            throw new IllegalArgumentException("Giá trị giảm giá phải lớn hơn 0");
         }
 
         // Validate percentage discount
         if (request.getDiscountType() == DiscountType.PERCENTAGE) {
             if (request.getDiscountValue().compareTo(new BigDecimal("100")) > 0) {
-                throw new RuntimeException("Percentage discount cannot exceed 100%");
+                throw new IllegalArgumentException("Giảm giá theo phần trăm không được vượt quá 100%");
             }
+            if (request.getDiscountValue().compareTo(BigDecimal.ZERO) <= 0) {
+                throw new IllegalArgumentException("Phần trăm giảm giá phải lớn hơn 0");
+            }
+        }
+
+        // Validate min order amount
+        if (request.getMinOrderAmount() != null && request.getMinOrderAmount().compareTo(BigDecimal.ZERO) < 0) {
+            throw new IllegalArgumentException("Giá trị đơn hàng tối thiểu không được âm");
+        }
+
+        // Validate max discount amount for percentage type
+        if (request.getDiscountType() == DiscountType.PERCENTAGE) {
+            if (request.getMaxDiscountAmount() != null && request.getMaxDiscountAmount().compareTo(BigDecimal.ZERO) <= 0) {
+                throw new IllegalArgumentException("Giá trị giảm giá tối đa phải lớn hơn 0");
+            }
+        }
+
+        // Validate usage limit
+        if (request.getUsageLimit() != null && request.getUsageLimit() <= 0) {
+            throw new IllegalArgumentException("Giới hạn sử dụng phải lớn hơn 0");
         }
 
         // Get staff if provided
         Staff staff = null;
         if (request.getCreatedBy() != null) {
             staff = staffRepository.findById(request.getCreatedBy())
-                    .orElseThrow(() -> new RuntimeException("Staff not found with id: " + request.getCreatedBy()));
+                    .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy nhân viên với ID: " + request.getCreatedBy()));
         }
 
         // Create voucher
         Voucher voucher = Voucher.builder()
-                .code(request.getCode().toUpperCase())
+                .code(upperCode)
                 .description(request.getDescription())
                 .discountType(request.getDiscountType())
                 .discountValue(request.getDiscountValue())
@@ -99,7 +130,7 @@ public class VoucherService {
      */
     public VoucherResponse getVoucherById(Long id) {
         Voucher voucher = voucherRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Voucher not found with id: " + id));
+                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy voucher với ID: " + id));
         return convertToResponse(voucher);
     }
 
@@ -107,8 +138,8 @@ public class VoucherService {
      * Get voucher by code
      */
     public VoucherResponse getVoucherByCode(String code) {
-        Voucher voucher = voucherRepository.findByCode(code.toUpperCase())
-                .orElseThrow(() -> new RuntimeException("Voucher not found with code: " + code));
+        Voucher voucher = voucherRepository.findByCode(code.trim().toUpperCase())
+                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy voucher với mã: " + code));
         return convertToResponse(voucher);
     }
 
@@ -118,44 +149,65 @@ public class VoucherService {
     @Transactional
     public VoucherResponse updateVoucher(Long id, UpdateVoucherRequest request) {
         Voucher voucher = voucherRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Voucher not found with id: " + id));
+                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy voucher với ID: " + id));
 
         // Update fields if provided
         if (request.getDescription() != null) {
             voucher.setDescription(request.getDescription());
         }
+        
         if (request.getDiscountType() != null) {
             voucher.setDiscountType(request.getDiscountType());
         }
+        
         if (request.getDiscountValue() != null) {
-            if (request.getDiscountType() == DiscountType.PERCENTAGE
-                    && request.getDiscountValue().compareTo(new BigDecimal("100")) > 0) {
-                throw new RuntimeException("Percentage discount cannot exceed 100%");
+            if (request.getDiscountValue().compareTo(BigDecimal.ZERO) <= 0) {
+                throw new IllegalArgumentException("Giá trị giảm giá phải lớn hơn 0");
+            }
+            
+            DiscountType type = request.getDiscountType() != null ? request.getDiscountType() : voucher.getDiscountType();
+            if (type == DiscountType.PERCENTAGE && request.getDiscountValue().compareTo(new BigDecimal("100")) > 0) {
+                throw new IllegalArgumentException("Giảm giá theo phần trăm không được vượt quá 100%");
             }
             voucher.setDiscountValue(request.getDiscountValue());
         }
+        
         if (request.getMinOrderAmount() != null) {
+            if (request.getMinOrderAmount().compareTo(BigDecimal.ZERO) < 0) {
+                throw new IllegalArgumentException("Giá trị đơn hàng tối thiểu không được âm");
+            }
             voucher.setMinOrderAmount(request.getMinOrderAmount());
         }
+        
         if (request.getMaxDiscountAmount() != null) {
+            if (request.getMaxDiscountAmount().compareTo(BigDecimal.ZERO) <= 0) {
+                throw new IllegalArgumentException("Giá trị giảm giá tối đa phải lớn hơn 0");
+            }
             voucher.setMaxDiscountAmount(request.getMaxDiscountAmount());
         }
+        
         if (request.getUsageLimit() != null) {
+            if (request.getUsageLimit() <= 0) {
+                throw new IllegalArgumentException("Giới hạn sử dụng phải lớn hơn 0");
+            }
             voucher.setUsageLimit(request.getUsageLimit());
         }
+        
         if (request.getStartDate() != null) {
             voucher.setStartDate(request.getStartDate());
         }
+        
         if (request.getEndDate() != null) {
             voucher.setEndDate(request.getEndDate());
         }
+        
         if (request.getIsActive() != null) {
             voucher.setIsActive(request.getIsActive());
         }
 
         // Validate dates
         if (voucher.getEndDate().isBefore(voucher.getStartDate())) {
-            throw new RuntimeException("End date must be after start date");
+            throw new IllegalArgumentException("Ngày kết thúc phải sau ngày bắt đầu");
         }
 
         voucher = voucherRepository.save(voucher);
@@ -167,9 +219,14 @@ public class VoucherService {
      */
     @Transactional
     public void deleteVoucher(Long id) {
-        if (!voucherRepository.existsById(id)) {
-            throw new RuntimeException("Voucher not found with id: " + id);
+        Voucher voucher = voucherRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy voucher với ID: " + id));
+        
+        // Check if voucher has been used
+        if (voucher.getUsedCount() > 0) {
+            throw new IllegalStateException("Không thể xóa voucher đã được sử dụng. Hãy vô hiệu hóa thay vì xóa.");
         }
+        
         voucherRepository.deleteById(id);
     }
 
@@ -177,22 +234,22 @@ public class VoucherService {
      * Apply voucher to order and calculate discount
      */
     public VoucherDiscountResponse applyVoucher(ApplyVoucherRequest request) {
-        Voucher voucher = voucherRepository.findByCode(request.getVoucherCode().toUpperCase())
-                .orElseThrow(() -> new RuntimeException("Voucher not found: " + request.getVoucherCode()));
+        Voucher voucher = voucherRepository.findByCode(request.getVoucherCode().trim().toUpperCase())
+                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy voucher: " + request.getVoucherCode()));
 
         // Validate voucher
         if (!voucher.isValid()) {
-            String reason = !voucher.getIsActive() ? "Voucher is inactive" :
-                    LocalDateTime.now().isBefore(voucher.getStartDate()) ? "Voucher not yet active" :
-                            LocalDateTime.now().isAfter(voucher.getEndDate()) ? "Voucher has expired" :
-                                    "Voucher usage limit reached";
-            throw new RuntimeException(reason);
+            String reason = !voucher.getIsActive() ? "Voucher đã bị vô hiệu hóa" :
+                    LocalDateTime.now().isBefore(voucher.getStartDate()) ? "Voucher chưa có hiệu lực" :
+                            LocalDateTime.now().isAfter(voucher.getEndDate()) ? "Voucher đã hết hạn" :
+                                    "Voucher đã hết lượt sử dụng";
+            throw new IllegalStateException(reason);
         }
 
         // Check minimum order amount
         if (!voucher.canBeUsedForAmount(request.getOrderAmount())) {
-            throw new RuntimeException(
-                    String.format("Minimum order amount is %s", voucher.getMinOrderAmount())
+            throw new IllegalArgumentException(
+                    String.format("Giá trị đơn hàng tối thiểu là %s VNĐ", voucher.getMinOrderAmount())
             );
         }
 
@@ -205,7 +262,7 @@ public class VoucherService {
                 .originalAmount(request.getOrderAmount())
                 .discountAmount(discountAmount)
                 .finalAmount(finalAmount)
-                .message("Voucher applied successfully")
+                .message("Áp dụng voucher thành công")
                 .build();
     }
 
@@ -214,11 +271,11 @@ public class VoucherService {
      */
     @Transactional
     public void confirmVoucherUsage(String code) {
-        Voucher voucher = voucherRepository.findByCode(code.toUpperCase())
-                .orElseThrow(() -> new RuntimeException("Voucher not found: " + code));
+        Voucher voucher = voucherRepository.findByCode(code.trim().toUpperCase())
+                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy voucher: " + code));
 
         if (!voucher.isValid()) {
-            throw new RuntimeException("Voucher is not valid");
+            throw new IllegalStateException("Voucher không hợp lệ");
         }
 
         voucher.setUsedCount(voucher.getUsedCount() + 1);
