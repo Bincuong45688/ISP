@@ -142,7 +142,7 @@ public class ShipperService {
         orderRepository.save(order);
     }
     @Transactional
-    public void completeOrder(Long orderId, String username, MultipartFile proofImage) {
+    public OrderResponse completeOrder(Long orderId, String username, MultipartFile proofImage) {
         if (proofImage == null || proofImage.isEmpty()) {
             throw new RuntimeException("Proof image is required");
         }
@@ -158,37 +158,56 @@ public class ShipperService {
         Shipper currentShipper = shipperRepository.findByAccount(current)
                 .orElseThrow(() -> new RuntimeException("Shipper not found for current account"));
 
+        // Ràng buộc shipper
         if (order.getShipper() == null) {
-            // auto-claim
+            // auto-claim nếu chưa có shipper
             order.setShipper(currentShipper);
             if (order.getStatus() == OrderStatus.CONFIRMED) {
                 order.setStatus(OrderStatus.SHIPPING);
             }
-        } else if (!Objects.equals(
-                order.getShipper().getAccount().getAccountId(),   // <-- đi qua getAccount()
-                current.getAccountId())) {
-
+        } else if (!Objects.equals(order.getShipper().getAccount().getAccountId(), current.getAccountId())) {
+            // khác shipper được gán
             if (order.getStatus() == OrderStatus.CONFIRMED) {
                 order.setShipper(currentShipper);
                 order.setStatus(OrderStatus.SHIPPING);
+            } else {
+                throw new RuntimeException("You are not the assigned shipper for this order");
             }
         }
+
         if (order.getStatus() != OrderStatus.SHIPPING) {
             throw new RuntimeException("Only SHIPPING orders can be completed");
         }
 
-        //  Upload POD
+        // Upload POD
         String url = cloudinaryService.uploadImage(proofImage, "isp/pod");
 
-        //  Lưu POD + cập nhật trạng thái
+        // Lưu POD + cập nhật trạng thái
         order.setProofImageUrl(url);
         order.setProofUploadedAt(java.time.LocalDateTime.now());
         order.setProofUploadedBy(current.getUsername());
         order.setStatus(OrderStatus.COMPLETED);
 
         orderRepository.save(order);
-    }
 
+        // === Trả về OrderResponse để shipper xem lại ảnh & thời gian upload ngay ===
+        return OrderResponse.builder()
+                .orderId(order.getOrderId())
+                .status(order.getStatus())
+                .shipperName(order.getShipper() != null ? order.getShipper().getShipperName() : null)
+                .proofImageUrl(order.getProofImageUrl())
+                .proofUploadedAt(order.getProofUploadedAt())
+                .proofUploadedBy(order.getProofUploadedBy())
+                .orderDate(order.getCreatedAt())
+                .address(order.getAddress())
+                .phone(order.getPhone())
+                .receiverName(order.getReceiverName())
+                .totalPrice(order.getTotalAmount())
+                .build();
+
+
+
+    }
     // Đơn chờ xác nhận (đối với shipper hiện tại)
     public List<OrderResponse> getPendingOrders() {
         String username = getCurrentUsername();

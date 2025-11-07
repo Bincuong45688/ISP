@@ -28,4 +28,9 @@ public class OrderResponse {
     private OrderStatus status;
 
     private String shipperName;
+
+
+    private String proofImageUrl;
+    private LocalDateTime proofUploadedAt;
+    private String proofUploadedBy;
 }
