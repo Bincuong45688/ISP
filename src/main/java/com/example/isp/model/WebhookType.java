@@ -1,16 +1,14 @@
 package com.example.isp.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import lombok.Data;
-import vn.payos.model.webhooks.WebhookData;
 
 @Data
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class WebhookType {
-    private long orderCode;    // 👈 THÊM DÒNG NÀY
     private String code;
     private String desc;
     private boolean success;
-
-    private WebhookData data;  // data.amount, data.transactionDateTime
+    private WebhookData data;
     private String signature;
 }
-

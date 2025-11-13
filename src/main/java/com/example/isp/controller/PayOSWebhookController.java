@@ -14,7 +14,7 @@ public class PayOSWebhookController {
 
     private final PayOSService payOSService;
 
-    // PayOS có thể gọi HEAD/GET để probe webhook
+    // PayOS probe GET webhook
     @GetMapping("/webhook")
     public ResponseEntity<String> probe() {
         return ResponseEntity.ok("OK");
@@ -23,21 +23,13 @@ public class PayOSWebhookController {
     @PostMapping("/webhook")
     public ResponseEntity<String> handleWebhook(
             @RequestBody(required = false) String rawBody,
-            @RequestHeader(value = "x-payos-signature", required = false) String signature
-    ) {
-        try {
-            log.info("=== WEBHOOK RECEIVED FROM PAYOS ===");
-            log.info("Signature = {}", signature);
-            log.info("RawBody = {}", rawBody);
+            @RequestHeader(value = "X-Signature", required = false) String signature) {
 
-            payOSService.handlePaymentWebhookRaw(rawBody, signature);
+        log.info("=== WEBHOOK RECEIVED FROM PAYOS ===");
+        log.info("Signature: {}", signature);
+        log.info("Body: {}", rawBody);
 
-        } catch (Exception ex) {
-            log.error("Webhook processing error: {}", ex.getMessage(), ex);
-
-            // Vẫn trả 200 OK để PayOS không gửi lại liên tục
-            return ResponseEntity.ok("ERROR");
-        }
+        payOSService.handlePaymentWebhookRaw(rawBody, signature);
 
         return ResponseEntity.ok("OK");
     }
