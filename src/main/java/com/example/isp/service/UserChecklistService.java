@@ -74,11 +74,11 @@ public class UserChecklistService {
     }
 
     /**
-     * Get user checklist by ID with all items
+     * Get user checklist by ID with all items (only active)
      */
     public UserChecklistDTO getUserChecklistById(Long id) {
-        UserChecklist userChecklist = userChecklistRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("User checklist not found with id: " + id));
+        UserChecklist userChecklist = userChecklistRepository.findByIdAndActive(id)
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy checklist với ID: " + id));
         return convertToDTO(userChecklist);
     }
 
@@ -95,8 +95,8 @@ public class UserChecklistService {
      */
     @Transactional
     public UserChecklistDTO updateUserChecklist(Long id, String title, LocalDateTime reminderDate) {
-        UserChecklist userChecklist = userChecklistRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("User checklist not found with id: " + id));
+        UserChecklist userChecklist = userChecklistRepository.findByIdAndActive(id)
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy checklist với ID: " + id));
 
         if (title != null) {
             userChecklist.setTitle(title);
@@ -116,7 +116,7 @@ public class UserChecklistService {
     @Transactional
     public UserChecklistItemDTO updateUserChecklistItem(Long itemId, UpdateUserChecklistItemRequest request) {
         UserChecklistItem item = userChecklistItemRepository.findById(itemId)
-                .orElseThrow(() -> new RuntimeException("User checklist item not found with id: " + itemId));
+                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy item với ID: " + itemId));
 
         if (request.getQuantity() != null) {
             item.setQuantity(request.getQuantity());
@@ -133,14 +133,62 @@ public class UserChecklistService {
     }
 
     /**
-     * Delete user checklist
+     * Update user checklist item by userChecklistId and itemId
+     * This is more intuitive when you know the checklist and item IDs
+     */
+    @Transactional
+    public UserChecklistItemDTO updateUserChecklistItemByIds(Long userChecklistId, Long itemId, UpdateUserChecklistItemRequest request) {
+        UserChecklistItem item = userChecklistItemRepository
+                .findByUserChecklist_UserChecklistIdAndItem_ItemId(userChecklistId, itemId)
+                .orElseThrow(() -> new IllegalArgumentException(
+                        String.format("Không tìm thấy item với userChecklistId: %d và itemId: %d", userChecklistId, itemId)
+                ));
+
+        if (request.getQuantity() != null) {
+            item.setQuantity(request.getQuantity());
+        }
+        if (request.getChecked() != null) {
+            item.setChecked(request.getChecked());
+        }
+        if (request.getNote() != null) {
+            item.setNote(request.getNote());
+        }
+
+        item = userChecklistItemRepository.save(item);
+        return convertItemToDTO(item);
+    }
+
+    /**
+     * Delete user checklist (soft delete)
      */
     @Transactional
     public void deleteUserChecklist(Long id) {
-        if (!userChecklistRepository.existsById(id)) {
-            throw new RuntimeException("User checklist not found with id: " + id);
+        UserChecklist userChecklist = userChecklistRepository.findByIdAndActive(id)
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy checklist với ID: " + id));
+        
+        // Soft delete
+        userChecklist.setIsActive(false);
+        userChecklist.setDeletedAt(LocalDateTime.now());
+        userChecklistRepository.save(userChecklist);
+    }
+
+    /**
+     * Restore deleted user checklist
+     */
+    @Transactional
+    public UserChecklistDTO restoreUserChecklist(Long id) {
+        UserChecklist userChecklist = userChecklistRepository.findByIdWithRelations(id)
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy checklist với ID: " + id));
+        
+        if (Boolean.TRUE.equals(userChecklist.getIsActive())) {
+            throw new IllegalStateException("Checklist này chưa bị xóa, không cần khôi phục");
         }
-        userChecklistRepository.deleteById(id);
+        
+        // Restore
+        userChecklist.setIsActive(true);
+        userChecklist.setDeletedAt(null);
+        userChecklist = userChecklistRepository.save(userChecklist);
+        return convertToDTO(userChecklist);
     }
 
     /**
@@ -158,8 +206,8 @@ public class UserChecklistService {
      */
     @Transactional
     public void markAsNotified(Long id) {
-        UserChecklist userChecklist = userChecklistRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("User checklist not found with id: " + id));
+        UserChecklist userChecklist = userChecklistRepository.findByIdAndActive(id)
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy checklist với ID: " + id));
         userChecklist.setIsNotified(true);
         userChecklistRepository.save(userChecklist);
     }
@@ -215,8 +263,8 @@ public class UserChecklistService {
      */
     @Transactional
     public void checkoutUserChecklist(Long userChecklistId) {
-        UserChecklist userChecklist = userChecklistRepository.findById(userChecklistId)
-                .orElseThrow(() -> new RuntimeException("User checklist not found with id: " + userChecklistId));
+        UserChecklist userChecklist = userChecklistRepository.findByIdAndActive(userChecklistId)
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy checklist với ID: " + userChecklistId));
 
         List<UserChecklistItem> items = userChecklistItemRepository
                 .findByUserChecklist_UserChecklistId(userChecklistId);

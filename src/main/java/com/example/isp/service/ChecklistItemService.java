@@ -37,10 +37,17 @@ public interface ChecklistItemService {
     ChecklistItem get(Long id);
 
     /**
-     * Xóa vật phẩm theo ID.
+     * Xóa vật phẩm theo ID (soft delete).
      * @param id ID của vật phẩm cần xóa
      */
     void delete(Long id);
+
+    /**
+     * Khôi phục vật phẩm đã xóa.
+     * @param id ID của vật phẩm cần khôi phục
+     * @return ChecklistItem sau khi khôi phục
+     */
+    ChecklistItem restore(Long id);
 
     /**
      * Tìm kiếm vật phẩm theo tên.

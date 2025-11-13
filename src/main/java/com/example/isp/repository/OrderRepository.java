@@ -13,9 +13,17 @@ import java.util.List;
 import java.util.Optional;
 
 public interface OrderRepository extends JpaRepository<Order, Long> {
-    List<Order> findByCustomerCustomerId(Long customerId);
+    // Fix LazyInitializationException: Load voucher với JOIN FETCH
+    @Query("SELECT o FROM Order o " +
+           "LEFT JOIN FETCH o.voucher " +
+           "WHERE o.customer.customerId = :customerId")
+    List<Order> findByCustomerCustomerId(@Param("customerId") Long customerId);
 
-    List<Order> findByShipperAccountUsernameAndStatus(String username, OrderStatus status);
+    // Fix LazyInitializationException: Load voucher với JOIN FETCH
+    @Query("SELECT o FROM Order o " +
+           "LEFT JOIN FETCH o.voucher " +
+           "WHERE o.shipper.account.username = :username AND o.status = :status")
+    List<Order> findByShipperAccountUsernameAndStatus(@Param("username") String username, @Param("status") OrderStatus status);
 
 
     boolean existsByOrderCode(String orderCode);

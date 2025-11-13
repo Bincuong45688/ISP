@@ -45,29 +45,47 @@ public class ChecklistItemServiceImpl implements ChecklistItemService {
     @Override
     @Transactional(readOnly = true)
     public List<ChecklistItem> list() {
-        return checklistItemRepository.findAll();
+        return checklistItemRepository.findAllActive();
     }
 
     @Override
     @Transactional(readOnly = true)
     public ChecklistItem get(Long id) {
-        return checklistItemRepository.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException("ChecklistItem not found: " + id));
+        return checklistItemRepository.findByIdAndActive(id)
+                .orElseThrow(() -> new EntityNotFoundException("Không tìm thấy ChecklistItem với ID: " + id));
     }
 
     @Override
     public void delete(Long id) {
-        if (!checklistItemRepository.existsById(id)) {
-            throw new EntityNotFoundException("ChecklistItem not found: " + id);
+        ChecklistItem item = checklistItemRepository.findByIdAndActive(id)
+                .orElseThrow(() -> new EntityNotFoundException("Không tìm thấy ChecklistItem với ID: " + id));
+        
+        // Soft delete: chỉ đánh dấu là deleted
+        item.setIsActive(false);
+        item.setDeletedAt(java.time.LocalDateTime.now());
+        checklistItemRepository.save(item);
+    }
+
+    @Override
+    public ChecklistItem restore(Long id) {
+        ChecklistItem item = checklistItemRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Không tìm thấy ChecklistItem với ID: " + id));
+        
+        if (Boolean.TRUE.equals(item.getIsActive())) {
+            throw new IllegalStateException("Item này chưa bị xóa, không cần khôi phục");
         }
-        checklistItemRepository.deleteById(id);
+        
+        // Khôi phục: đánh dấu lại là active
+        item.setIsActive(true);
+        item.setDeletedAt(null);
+        return checklistItemRepository.save(item);
     }
 
     @Override
     @Transactional(readOnly = true)
     public List<ChecklistItem> searchByName(String keyword) {
         if (keyword == null || keyword.isBlank()) {
-            return checklistItemRepository.findAll();
+            return checklistItemRepository.findAllActive();
         }
         return checklistItemRepository.searchByName(keyword);
     }
@@ -77,7 +95,9 @@ public class ChecklistItemServiceImpl implements ChecklistItemService {
     public Page<ChecklistItem> filter(String name, Pageable pageable) {
         final String nameF = name;
 
-        Specification<ChecklistItem> spec = Specification.allOf();
+        // Luôn filter isActive = true
+        Specification<ChecklistItem> spec = (root, query, cb) -> 
+            cb.equal(root.get("isActive"), true);
 
         // Lọc theo tên (tìm kiếm gần đúng)
         if (nameF != null && !nameF.isBlank()) {

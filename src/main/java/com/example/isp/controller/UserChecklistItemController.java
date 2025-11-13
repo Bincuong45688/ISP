@@ -28,19 +28,12 @@ public class UserChecklistItemController {
     public ResponseEntity<Map<String, Object>> getUserChecklistItems(
             @RequestParam Long userChecklistId
     ) {
-        try {
-            List<UserChecklistItemDTO> items = userChecklistService.getUserChecklistItems(userChecklistId);
+        List<UserChecklistItemDTO> items = userChecklistService.getUserChecklistItems(userChecklistId);
 
-            Map<String, Object> response = new HashMap<>();
-            response.put("success", true);
-            response.put("data", items);
-            return ResponseEntity.ok(response);
-        } catch (Exception e) {
-            Map<String, Object> response = new HashMap<>();
-            response.put("success", false);
-            response.put("message", "Failed to get user checklist items: " + e.getMessage());
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
-        }
+        Map<String, Object> response = new HashMap<>();
+        response.put("success", true);
+        response.put("data", items);
+        return ResponseEntity.ok(response);
     }
 
     /**
@@ -49,19 +42,12 @@ public class UserChecklistItemController {
      */
     @GetMapping("/{id}")
     public ResponseEntity<Map<String, Object>> getUserChecklistItemById(@PathVariable Long id) {
-        try {
-            UserChecklistItemDTO item = userChecklistService.getUserChecklistItemById(id);
+        UserChecklistItemDTO item = userChecklistService.getUserChecklistItemById(id);
 
-            Map<String, Object> response = new HashMap<>();
-            response.put("success", true);
-            response.put("data", item);
-            return ResponseEntity.ok(response);
-        } catch (Exception e) {
-            Map<String, Object> response = new HashMap<>();
-            response.put("success", false);
-            response.put("message", "User checklist item not found: " + e.getMessage());
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
-        }
+        Map<String, Object> response = new HashMap<>();
+        response.put("success", true);
+        response.put("data", item);
+        return ResponseEntity.ok(response);
     }
 
     /**
@@ -73,20 +59,13 @@ public class UserChecklistItemController {
     public ResponseEntity<Map<String, Object>> createUserChecklistItem(
             @RequestBody CreateUserChecklistItemRequest request
     ) {
-        try {
-            UserChecklistItemDTO item = userChecklistService.createUserChecklistItem(request);
+        UserChecklistItemDTO item = userChecklistService.createUserChecklistItem(request);
 
-            Map<String, Object> response = new HashMap<>();
-            response.put("success", true);
-            response.put("message", "User checklist item created successfully");
-            response.put("data", item);
-            return ResponseEntity.status(HttpStatus.CREATED).body(response);
-        } catch (Exception e) {
-            Map<String, Object> response = new HashMap<>();
-            response.put("success", false);
-            response.put("message", "Failed to create user checklist item: " + e.getMessage());
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
-        }
+        Map<String, Object> response = new HashMap<>();
+        response.put("success", true);
+        response.put("message", "Thêm item vào checklist thành công");
+        response.put("data", item);
+        return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
     /**
@@ -98,20 +77,32 @@ public class UserChecklistItemController {
             @PathVariable Long id,
             @RequestBody UpdateUserChecklistItemRequest request
     ) {
-        try {
-            UserChecklistItemDTO item = userChecklistService.updateUserChecklistItem(id, request);
+        UserChecklistItemDTO item = userChecklistService.updateUserChecklistItem(id, request);
 
-            Map<String, Object> response = new HashMap<>();
-            response.put("success", true);
-            response.put("message", "User checklist item updated successfully");
-            response.put("data", item);
-            return ResponseEntity.ok(response);
-        } catch (Exception e) {
-            Map<String, Object> response = new HashMap<>();
-            response.put("success", false);
-            response.put("message", "Failed to update user checklist item: " + e.getMessage());
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
-        }
+        Map<String, Object> response = new HashMap<>();
+        response.put("success", true);
+        response.put("message", "Cập nhật item thành công");
+        response.put("data", item);
+        return ResponseEntity.ok(response);
+    }
+
+    /**
+     * Update user checklist item by userChecklistId and itemId
+     * PUT /api/user-checklist-items/checklist/{userChecklistId}/item/{itemId}
+     */
+    @PutMapping("/checklist/{userChecklistId}/item/{itemId}")
+    public ResponseEntity<Map<String, Object>> updateUserChecklistItemByIds(
+            @PathVariable Long userChecklistId,
+            @PathVariable Long itemId,
+            @RequestBody UpdateUserChecklistItemRequest request
+    ) {
+        UserChecklistItemDTO item = userChecklistService.updateUserChecklistItemByIds(userChecklistId, itemId, request);
+
+        Map<String, Object> response = new HashMap<>();
+        response.put("success", true);
+        response.put("message", "Cập nhật item thành công");
+        response.put("data", item);
+        return ResponseEntity.ok(response);
     }
 
     /**
@@ -120,19 +111,12 @@ public class UserChecklistItemController {
      */
     @DeleteMapping("/{id}")
     public ResponseEntity<Map<String, Object>> deleteUserChecklistItem(@PathVariable Long id) {
-        try {
-            userChecklistService.deleteUserChecklistItem(id);
+        userChecklistService.deleteUserChecklistItem(id);
 
-            Map<String, Object> response = new HashMap<>();
-            response.put("success", true);
-            response.put("message", "User checklist item deleted successfully");
-            return ResponseEntity.ok(response);
-        } catch (Exception e) {
-            Map<String, Object> response = new HashMap<>();
-            response.put("success", false);
-            response.put("message", "Failed to delete user checklist item: " + e.getMessage());
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
-        }
+        Map<String, Object> response = new HashMap<>();
+        response.put("success", true);
+        response.put("message", "Xóa item thành công");
+        return ResponseEntity.ok(response);
     }
 
     /**
@@ -144,19 +128,12 @@ public class UserChecklistItemController {
             @PathVariable Long id,
             @RequestParam(defaultValue = "true") Boolean checked
     ) {
-        try {
-            UserChecklistItemDTO item = userChecklistService.checkUserChecklistItem(id, checked);
+        UserChecklistItemDTO item = userChecklistService.checkUserChecklistItem(id, checked);
 
-            Map<String, Object> response = new HashMap<>();
-            response.put("success", true);
-            response.put("message", checked ? "Item marked as completed" : "Item marked as incomplete");
-            response.put("data", item);
-            return ResponseEntity.ok(response);
-        } catch (Exception e) {
-            Map<String, Object> response = new HashMap<>();
-            response.put("success", false);
-            response.put("message", "Failed to update item status: " + e.getMessage());
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
-        }
+        Map<String, Object> response = new HashMap<>();
+        response.put("success", true);
+        response.put("message", checked ? "Đánh dấu hoàn thành" : "Bỏ đánh dấu hoàn thành");
+        response.put("data", item);
+        return ResponseEntity.ok(response);
     }
 }
