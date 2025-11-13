@@ -2,21 +2,22 @@ package com.example.isp.service;
 
 import com.example.isp.model.Order;
 import com.example.isp.model.Payment;
+import com.example.isp.model.WebhookType;
 import com.example.isp.model.enums.OrderStatus;
 import com.example.isp.model.enums.PaymentStatus;
 import com.example.isp.repository.OrderRepository;
 import com.example.isp.repository.PaymentRepository;
-import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 import vn.payos.PayOS;
-import vn.payos.exception.PayOSException;
-import vn.payos.type.PaymentData;
+import vn.payos.model.v2.paymentRequests.CreatePaymentLinkRequest;
+import vn.payos.model.v2.paymentRequests.CreatePaymentLinkResponse;
 
+import java.math.BigDecimal;
 import java.time.OffsetDateTime;
 import java.util.HashMap;
 import java.util.Map;
@@ -39,240 +40,203 @@ public class PayOSServiceImpl implements PayOSService {
     @Value("${app.payments.cancelUrl}")
     private String cancelUrl;
 
-    /**
-     * Tạo link thanh toán PayOS
-     */
+    // TẠO LINK THANH TOÁN
     @Override
     @Transactional
     public Map<String, String> createPaymentLink(Long orderId) {
+
         Order order = orderRepository.findById(orderId)
-                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy đơn hàng #" + orderId));
-        String internalOrderCode = ensureOrderCode(order);
+                .orElseThrow(() -> new RuntimeException("Order not found"));
 
-        int amountForPayOS = safeInt(order.getTotalAmount().longValue(), "amount");
-        String cancelUrlFull = cancelUrl + "?orderId=" + orderId;
+        long amount = order.getTotalAmount() != null
+                ? order.getTotalAmount().longValue()
+                : 0L;
 
-        long payosOrderCode = nextPayosOrderCode();
+        if (amount <= 0) {
+            throw new RuntimeException("Tổng tiền không hợp lệ.");
+        }
 
-        PaymentData paymentData = PaymentData.builder()
+        // TẠO orderCode KHÔNG BAO GIỜ TRÙNG
+        long payosOrderCode = generateUniqueOrderCode(orderId);
+
+        String desc = "PAY " + order.getOrderCode();
+        if (desc.length() > 25) {
+            desc = desc.substring(0, 25);
+        }
+
+        // REQUEST đến PayOS
+        CreatePaymentLinkRequest req = CreatePaymentLinkRequest.builder()
                 .orderCode(payosOrderCode)
-                .amount(amountForPayOS)
-                .description(shortDesc(internalOrderCode))
+                .amount(amount)
+                .description(desc)
                 .returnUrl(successUrl)
-                .cancelUrl(cancelUrlFull)
+                .cancelUrl(cancelUrl)
                 .build();
 
         try {
-            var response = payOS.createPaymentLink(paymentData);
+            CreatePaymentLinkResponse res = payOS
+                    .paymentRequests()
+                    .create(req);
 
+            // LƯU PAYMENT
             Payment payment = Payment.builder()
                     .order(order)
                     .provider("PAYOS")
-                    .status(PaymentStatus.PENDING)
-                    .amount(order.getTotalAmount())
                     .payosOrderCode(payosOrderCode)
-                    .checkoutUrl(response.getCheckoutUrl())
+                    .amount(BigDecimal.valueOf(amount))
+                    .status(PaymentStatus.PENDING)
+                    .checkoutUrl(res.getCheckoutUrl())
+                    .qrCode(res.getQrCode())
+                    .paymentLinkId(res.getPaymentLinkId())
                     .createdAt(OffsetDateTime.now())
                     .build();
+
             paymentRepository.save(payment);
 
+            // TRẢ CHO FE
             Map<String, String> result = new HashMap<>();
-            result.put("checkoutUrl", response.getCheckoutUrl());
-            result.put("payosOrderCode", String.valueOf(payosOrderCode));
-            result.put("orderCode", internalOrderCode);
-            result.put("amount", order.getTotalAmount().toPlainString());
+            result.put("checkoutUrl", res.getCheckoutUrl());
+            result.put("qrCode", res.getQrCode());
+            result.put("paymentLinkId", res.getPaymentLinkId());
+            result.put("orderCode", String.valueOf(payosOrderCode));
+
             return result;
 
-        } catch (PayOSException ex) {
-            throw new RuntimeException("Tạo liên kết PayOS thất bại: " + ex.getMessage(), ex);
         } catch (Exception e) {
-            throw new RuntimeException("Không tạo được liên kết thanh toán PayOS: " + e.getMessage(), e);
+            log.error("PayOS Create Link Error: {}", e.getMessage());
+            throw new RuntimeException("Lỗi tạo liên kết thanh toán PayOS");
         }
     }
+    private long generateUniqueOrderCode(Long orderId) {
 
-    /**
-     * Webhook từ PayOS:
-     * - SUCCESS -> Payment.SUCCESS, Order.PAID
-     * - CANCEL  -> Payment.CANCELED + Order.CANCELLED
-     * - else    -> Payment.FAILED
-     */
-    @Override
-    @Transactional
-    public void handlePaymentWebhookRaw(String rawBody, String headerSignature) {
-        try {
-            if (rawBody == null || rawBody.isBlank()) {
-                log.info("[PayOS] Webhook rỗng -> bỏ qua");
-                return;
-            }
+        // Giới hạn orderId còn 7 digits để không vượt giới hạn
+        long prefix = orderId % 10_000_000;
 
-            Map<String, Object> payload = objectMapper.readValue(rawBody, new TypeReference<>() {});
-            Map<String, Object> data = asMap(payload.get("data"));
+        // 2 số cuối của milliseconds (0–99)
+        long timePart = System.currentTimeMillis() % 100;
 
-            Object orderCodeObj = data.get("orderCode");
-            if (orderCodeObj == null) {
-                log.warn("[PayOS] Webhook thiếu orderCode -> bỏ qua");
-                return;
-            }
+        // Random 2 digits (10–99)
+        int randomPart = ThreadLocalRandom.current().nextInt(10, 99);
 
-            Long payosOrderCode = toLong(orderCodeObj);
-            if (payosOrderCode == null) {
-                log.warn("[PayOS] Webhook orderCode không hợp lệ: {}", orderCodeObj);
-                return;
-            }
+        // Ghép lại thành 1 số duy nhất
+        long orderCode = prefix * 10_000 + timePart * 100 + randomPart;
 
-            Optional<Payment> opt = paymentRepository.findByPayosOrderCode(payosOrderCode);
-            if (opt.isEmpty()) {
-                log.warn("[PayOS] Không tìm thấy Payment với payos_order_code={}", payosOrderCode);
-                return;
-            }
-
-            Payment payment = opt.get();
-            Order order = payment.getOrder();
-
-            String code = str(data.get("code"));
-            String desc = str(data.get("desc"));
-            String event = str(payload.get("event"));
-            String status = str(data.get("status"));
-            String reference = str(data.get("reference"));
-
-            boolean isSuccess = eq(code, "00") || eq(desc, "success") || eq(status, "PAID")
-                    || eq(event, "payment.completed");
-            boolean isCancelled = eq(event, "payment.cancelled")
-                    || eq(status, "CANCELLED") || eq(status, "cancelled")
-                    || eq(desc, "cancelled");
-
-            if (isSuccess) {
-                payment.setStatus(PaymentStatus.SUCCESS);
-                payment.setPaidAt(OffsetDateTime.now());
-                if (!isBlank(reference)) payment.setTransactionId(reference);
-
-                if (order != null && order.getStatus() != OrderStatus.PAID) {
-                    order.setStatus(OrderStatus.PAID);
-                    orderRepository.save(order);
-                }
-                log.info("[PayOS] SUCCESS -> Order {} cập nhật PAID", order.getOrderId());
-
-            } else if (isCancelled) {
-                payment.setStatus(PaymentStatus.CANCELED);
-                if (isBlank(payment.getTransactionId())) {
-                    payment.setTransactionId("USER_CANCELLED_WEBHOOK");
-                }
-
-                if (order != null && order.getStatus() != OrderStatus.CANCELLED) {
-                    order.setStatus(OrderStatus.CANCELLED);
-                    orderRepository.save(order);
-                    log.info("[PayOS] CANCELLED -> Order {} cập nhật CANCELLED", order.getOrderId());
-                } else {
-                    log.info("[PayOS] CANCELLED webhook -> order đã hủy trước đó hoặc null");
-                }
-
-            } else {
-                payment.setStatus(PaymentStatus.FAILED);
-                if (isBlank(payment.getTransactionId())) {
-                    payment.setTransactionId("FAILED_WEBHOOK");
-                }
-                log.warn("[PayOS] FAILED/UNKNOWN (order_code={})",
-                        order != null ? order.getOrderCode() : "N/A");
-            }
-
-            paymentRepository.save(payment);
-
-        } catch (Exception e) {
-            log.error("[PayOS] Lỗi xử lý webhook: {}", e.getMessage(), e);
-        }
+        return orderCode;
     }
 
+    // =================== Helper ===================
+    private long generateOrderCode() {
+        return System.currentTimeMillis() + ThreadLocalRandom.current().nextInt(100, 999);
+    }
+
+    private void ensureOrderCode(Order order) {
+        if (order.getOrderCode() == null || order.getOrderCode().isBlank()) {
+            order.setOrderCode("ORD-" + generateOrderCode());
+            orderRepository.save(order);
+        }
+    }
     @Override
     @Transactional
     public void userCancel(Long orderId) {
-        var opt = paymentRepository
-                .findTopByOrder_OrderIdAndStatusOrderByIdDesc(orderId, PaymentStatus.PENDING);
+
+        // Lấy Payment đang PENDING của Order
+        Optional<Payment> opt = paymentRepository
+                .findTopByOrderOrderIdAndStatusOrderByIdDesc(orderId, PaymentStatus.PENDING);
+
         if (opt.isEmpty()) {
-            log.info("[PayOS] userCancel: không còn payment PENDING cho orderId={}", orderId);
+            log.info("[PayOS] userCancel: Không còn payment PENDING cho order {}", orderId);
         } else {
-            Payment p = opt.get();
-            p.setStatus(PaymentStatus.CANCELED);
-            if (isBlank(p.getTransactionId())) {
-                p.setTransactionId("USER_CANCELLED_FE");
+            Payment payment = opt.get();
+
+            // Cập nhật Payment → CANCELED
+            payment.setStatus(PaymentStatus.CANCELED);
+
+            if (payment.getTransactionId() == null || payment.getTransactionId().isBlank()) {
+                payment.setTransactionId("USER_CANCEL");
             }
-            paymentRepository.save(p);
+
+            paymentRepository.save(payment);
         }
 
-        // Đồng bộ trạng thái Order
+        // Cập nhật Order → CANCELLED
         orderRepository.findById(orderId).ifPresent(order -> {
-            if (order.getStatus() != OrderStatus.CANCELLED &&
-                    order.getStatus() != OrderStatus.COMPLETED &&
-                    order.getStatus() != OrderStatus.SHIPPING) {
-                order.setStatus(OrderStatus.CANCELLED);
-                orderRepository.save(order);
-                log.info("[PayOS] userCancel: cập nhật Order {} -> CANCELLED", orderId);
-            } else {
-                log.info("[PayOS] userCancel: Order {} không được hủy (trạng thái={})", orderId, order.getStatus());
+
+            // Không cho hủy nếu đã: PAID, SHIPPING, COMPLETED
+            if (order.getStatus() == OrderStatus.PAID ||
+                    order.getStatus() == OrderStatus.SHIPPING ||
+                    order.getStatus() == OrderStatus.COMPLETED) {
+
+                log.warn("[PayOS] userCancel: Order {} không thể hủy vì trạng thái={}",
+                        orderId, order.getStatus());
+                return;
             }
+
+            order.setStatus(OrderStatus.CANCELLED);
+            orderRepository.save(order);
+
+            log.info("[PayOS] userCancel: Đã cập nhật Order {} -> CANCELLED", orderId);
         });
     }
+    @Override
+    public void handlePaymentWebhookRaw(String rawBody, String signature) {
+        log.info("== HANDLE WEBHOOK RAW ==");
+        log.info("Signature: {}", signature);
+        log.info("RawBody: {}", rawBody);
 
-    // ===================== Helpers =====================
-
-    private static final Object CODE_LOCK = new Object();
-
-    private long nextPayosOrderCode() {
-        synchronized (CODE_LOCK) {
-            long base = paymentRepository.findTopByOrderByIdDesc()
-                    .map(p -> p.getPayosOrderCode() == null ? 0L : p.getPayosOrderCode())
-                    .orElse(0L);
-            long candidate = (base > 0) ? base + 1 : System.currentTimeMillis();
-            if (base <= 0) {
-                candidate = candidate * 10 + ThreadLocalRandom.current().nextInt(0, 10);
-            }
-            return candidate;
-        }
-    }
-
-    private String ensureOrderCode(Order order) {
-        if (isBlank(order.getOrderCode())) {
-            order.setOrderCode("ORD" + order.getOrderId());
-            orderRepository.save(order);
-        }
-        return order.getOrderCode();
-    }
-
-    @SuppressWarnings("unchecked")
-    private static Map<String, Object> asMap(Object o) {
-        return (o instanceof Map<?, ?> m) ? (Map<String, Object>) m : Map.of();
-    }
-
-    private static String str(Object o) {
-        return o == null ? null : String.valueOf(o);
-    }
-
-    private static boolean isBlank(String s) {
-        return s == null || s.isBlank();
-    }
-
-    private static boolean eq(String a, String b) {
-        return a != null && b != null && a.equalsIgnoreCase(b);
-    }
-
-    private static int safeInt(long v, String field) {
-        if (v > Integer.MAX_VALUE)
-            throw new IllegalArgumentException(field + " vượt giới hạn Integer: " + v);
-        if (v < 0)
-            throw new IllegalArgumentException(field + " âm không hợp lệ: " + v);
-        return (int) v;
-    }
-
-    private static String shortDesc(String internalOrderCode) {
-        String s = "PAY " + internalOrderCode;
-        return s.length() <= 25 ? s : s.substring(0, 25);
-    }
-
-    private static Long toLong(Object o) {
         try {
-            if (o instanceof Number n) return n.longValue();
-            return Long.parseLong(String.valueOf(o));
-        } catch (Exception e) {
-            return null;
+            if (rawBody == null || rawBody.isEmpty()) {
+                log.error("Webhook null/empty body");
+                return;
+            }
+
+            // Parse JSON body -> WebhookType
+            WebhookType webhook = objectMapper.readValue(rawBody, WebhookType.class);
+
+            if (webhook == null || webhook.getData() == null) {
+                log.error("Webhook missing data");
+                return;
+            }
+
+            long orderCode = webhook.getData().getOrderCode();
+            String code = webhook.getData().getCode();
+
+            log.info("Webhook orderCode = {}", orderCode);
+            log.info("Webhook code = {}", code);
+
+            Optional<Payment> paymentOpt = paymentRepository.findByPayosOrderCode(orderCode);
+
+            if (paymentOpt.isEmpty()) {
+                log.error("Payment not found for orderCode {}", orderCode);
+                return;
+            }
+
+            Payment payment = paymentOpt.get();
+
+            if (payment.getStatus() != PaymentStatus.PENDING) {
+                log.warn("Webhook ignored: already processed");
+                return;
+            }
+
+            // SUCCESS = "00"
+            if ("00".equalsIgnoreCase(code)) {
+                payment.setStatus(PaymentStatus.SUCCESS);
+                payment.setPaidAt(OffsetDateTime.now());
+
+                Order order = payment.getOrder();
+                order.setStatus(OrderStatus.PAID);
+                orderRepository.save(order);
+
+                log.info("Payment SUCCESS for {}", orderCode);
+            } else {
+                payment.setStatus(PaymentStatus.FAILED);
+                log.warn("Payment FAILED for {}", orderCode);
+            }
+
+            paymentRepository.save(payment);
+
+        } catch (Exception ex) {
+            log.error("Webhook processing failed: {}", ex.getMessage(), ex);
         }
     }
+
 }
