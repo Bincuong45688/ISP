@@ -8,12 +8,9 @@ import java.util.Optional;
 
 public interface PaymentRepository extends JpaRepository<Payment, Long> {
 
-    /** Tìm Payment theo payos_order_code (duy nhất) */
     Optional<Payment> findByPayosOrderCode(Long payosOrderCode);
 
-    /** Lấy Payment mới nhất trong hệ thống (để sinh order_code mới) */
-    Optional<Payment> findTopByOrderByIdDesc();
+    Optional<Payment> findTopByOrderOrderIdAndStatusOrderByIdDesc(Long orderId, PaymentStatus status);
+    Optional<Payment> findByOrder_OrderId(Long orderId);
 
-    /** Lấy Payment mới nhất của 1 orderId theo status */
-    Optional<Payment> findTopByOrder_OrderIdAndStatusOrderByIdDesc(Long orderId, PaymentStatus status);
 }
