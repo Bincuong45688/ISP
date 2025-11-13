@@ -48,6 +48,9 @@ public class PayOSServiceImpl implements PayOSService {
         Order order = orderRepository.findById(orderId)
                 .orElseThrow(() -> new RuntimeException("Order not found"));
 
+        // Đảm bảo orderCode không bị null
+        ensureOrderCode(order);
+
         long amount = order.getTotalAmount() != null
                 ? order.getTotalAmount().longValue()
                 : 0L;
@@ -56,15 +59,11 @@ public class PayOSServiceImpl implements PayOSService {
             throw new RuntimeException("Tổng tiền không hợp lệ.");
         }
 
-        // TẠO orderCode KHÔNG BAO GIỜ TRÙNG
         long payosOrderCode = generateUniqueOrderCode(orderId);
 
         String desc = "PAY " + order.getOrderCode();
-        if (desc.length() > 25) {
-            desc = desc.substring(0, 25);
-        }
+        if (desc.length() > 25) desc = desc.substring(0, 25);
 
-        // REQUEST đến PayOS
         CreatePaymentLinkRequest req = CreatePaymentLinkRequest.builder()
                 .orderCode(payosOrderCode)
                 .amount(amount)
@@ -74,11 +73,8 @@ public class PayOSServiceImpl implements PayOSService {
                 .build();
 
         try {
-            CreatePaymentLinkResponse res = payOS
-                    .paymentRequests()
-                    .create(req);
+            CreatePaymentLinkResponse res = payOS.paymentRequests().create(req);
 
-            // LƯU PAYMENT
             Payment payment = Payment.builder()
                     .order(order)
                     .provider("PAYOS")
@@ -91,9 +87,8 @@ public class PayOSServiceImpl implements PayOSService {
                     .createdAt(OffsetDateTime.now())
                     .build();
 
-            paymentRepository.save(payment);
+            paymentRepository.saveAndFlush(payment);
 
-            // TRẢ CHO FE
             Map<String, String> result = new HashMap<>();
             result.put("checkoutUrl", res.getCheckoutUrl());
             result.put("qrCode", res.getQrCode());
@@ -107,6 +102,7 @@ public class PayOSServiceImpl implements PayOSService {
             throw new RuntimeException("Lỗi tạo liên kết thanh toán PayOS");
         }
     }
+
     private long generateUniqueOrderCode(Long orderId) {
 
         // Giới hạn orderId còn 7 digits để không vượt giới hạn
@@ -178,18 +174,16 @@ public class PayOSServiceImpl implements PayOSService {
         });
     }
     @Override
+    @Transactional
     public void handlePaymentWebhookRaw(String rawBody, String signature) {
         log.info("== HANDLE WEBHOOK RAW ==");
-        log.info("Signature: {}", signature);
-        log.info("RawBody: {}", rawBody);
 
         try {
             if (rawBody == null || rawBody.isEmpty()) {
-                log.error("Webhook null/empty body");
+                log.error("Webhook empty body");
                 return;
             }
 
-            // Parse JSON body -> WebhookType
             WebhookType webhook = objectMapper.readValue(rawBody, WebhookType.class);
 
             if (webhook == null || webhook.getData() == null) {
@@ -199,44 +193,52 @@ public class PayOSServiceImpl implements PayOSService {
 
             long orderCode = webhook.getData().getOrderCode();
             String code = webhook.getData().getCode();
+            String txId = webhook.getData().getTransactionId();
 
-            log.info("Webhook orderCode = {}", orderCode);
-            log.info("Webhook code = {}", code);
+            Optional<Payment> opt = paymentRepository.findByPayosOrderCode(orderCode);
 
-            Optional<Payment> paymentOpt = paymentRepository.findByPayosOrderCode(orderCode);
-
-            if (paymentOpt.isEmpty()) {
-                log.error("Payment not found for orderCode {}", orderCode);
+            if (opt.isEmpty()) {
+                log.error("Payment not found for {}", orderCode);
                 return;
             }
 
-            Payment payment = paymentOpt.get();
+            Payment payment = opt.get();
 
             if (payment.getStatus() != PaymentStatus.PENDING) {
-                log.warn("Webhook ignored: already processed");
+                log.warn("Webhook ignored (already processed)");
                 return;
             }
 
-            // SUCCESS = "00"
+            // SUCCESS
             if ("00".equalsIgnoreCase(code)) {
+
                 payment.setStatus(PaymentStatus.SUCCESS);
                 payment.setPaidAt(OffsetDateTime.now());
+                payment.setTransactionId(txId);
+
+                paymentRepository.saveAndFlush(payment);
 
                 Order order = payment.getOrder();
                 order.setStatus(OrderStatus.PAID);
-                orderRepository.save(order);
+
+                orderRepository.saveAndFlush(order);
 
                 log.info("Payment SUCCESS for {}", orderCode);
+
             } else {
+                // FAIL
                 payment.setStatus(PaymentStatus.FAILED);
+                payment.setTransactionId(txId);
+
+                paymentRepository.saveAndFlush(payment);
+
                 log.warn("Payment FAILED for {}", orderCode);
             }
-
-            paymentRepository.save(payment);
 
         } catch (Exception ex) {
             log.error("Webhook processing failed: {}", ex.getMessage(), ex);
         }
     }
+
 
 }
