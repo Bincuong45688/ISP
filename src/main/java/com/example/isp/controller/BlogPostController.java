@@ -56,7 +56,7 @@ public class BlogPostController {
     // ==== Create (multipart/form-data) ====
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @ResponseStatus(HttpStatus.CREATED)
-    @Operation(summary = "Tạo bài viết blog mới (author mặc định 'Staff', thời gian theo giờ VN)")
+    @Operation(summary = "Tạo bài viết blog mới (author mặc định 'Manager', thời gian theo giờ VN)")
     public BlogPostResponse create(
             @RequestParam String title,
             @RequestParam(required = false) String slug,
@@ -77,7 +77,7 @@ public class BlogPostController {
                 .content(content)
                 .category(category)
                 .thumbnailUrl(imageUrl)
-                .authorName("Staff") // ✅ Không còn dùng Staff entity
+                .authorName("Manager") // ✅ Không còn dùng Manager entity
                 .createdAt(LocalDateTime.now(ZoneId.of("Asia/Ho_Chi_Minh")))
                 .build();
 
@@ -159,7 +159,7 @@ public class BlogPostController {
                 post.getThumbnailUrl(),
                 post.getCreatedAt(),
                 post.getUpdatedAt(),
-                post.getAuthorName() // ✅ Dùng authorName thay cho Staff
+                post.getAuthorName() // ✅ Dùng authorName thay cho Manager
         );
     }
 }

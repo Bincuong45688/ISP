@@ -89,7 +89,7 @@ public class OrderServiceImpl implements  OrderService {
 
         boolean isCustomerOwner = order.getCustomer().getAccount().getUsername().equals(username);
 
-        if(role == Role.STAFF || (role == Role.CUSTOMER && isCustomerOwner)) {
+        if(role == Role.MANAGER || (role == Role.CUSTOMER && isCustomerOwner)) {
 
             restoreStockAfterCancel(order);
 

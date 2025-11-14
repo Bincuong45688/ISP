@@ -16,7 +16,7 @@ import java.util.List;
 
 @Service
 @RequiredArgsConstructor
-public class StaffOrderService {
+public class ManagerOrderService {
 
     private final OrderRepository orderRepository;
     private final ShipperRepository shipperRepository;
@@ -30,7 +30,7 @@ public class StaffOrderService {
                 .toList();
     }
 
-    // Staff xác nhận đơn hàng từ khách, chuyển từ PENDING → CONFIRMED.
+    // Manager xác nhận đơn hàng từ khách, chuyển từ PENDING → CONFIRMED.
     public void confirmOrder(Long orderId) {
 
         Order order = orderRepository.findById(orderId)

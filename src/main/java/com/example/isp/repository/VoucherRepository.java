@@ -54,6 +54,6 @@ public interface VoucherRepository extends JpaRepository<Voucher, Long> {
     @Query("SELECT v FROM Voucher v WHERE v.endDate < :now")
     List<Voucher> findExpiredVouchers(@Param("now") LocalDateTime now);
 
-    // Find vouchers created by staff
-    Page<Voucher> findByCreatedBy_StaffId(Long staffId, Pageable pageable);
+    // Find vouchers created by manager
+    Page<Voucher> findByCreatedBy_ManagerId(Long managerId, Pageable pageable);
 }

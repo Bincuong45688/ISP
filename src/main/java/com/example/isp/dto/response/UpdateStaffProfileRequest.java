@@ -1,4 +1,4 @@
-package com.example.isp.dto.request;
+package com.example.isp.dto.response;
 
 import lombok.Data;
 
@@ -7,5 +7,5 @@ public class UpdateStaffProfileRequest {
     private String staffName;
     private String email;
     private String phone;
-    private String password;
+    private String gender;
 }

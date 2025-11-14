@@ -44,7 +44,6 @@ public class ShipperService {
     private final OrderRepository orderRepository;
     private final OrderMapper orderMapper;
     private final CloudinaryService cloudinaryService;
-    private static final Logger log = LoggerFactory.getLogger(ShipperService.class);
 
     private String getCurrentUsername() {
         return SecurityContextHolder.getContext().getAuthentication().getName();
@@ -141,6 +140,7 @@ public class ShipperService {
         order.setStatus(OrderStatus.SHIPPING);
         orderRepository.save(order);
     }
+
     @Transactional
     public OrderResponse completeOrder(Long orderId, String username, MultipartFile proofImage) {
         if (proofImage == null || proofImage.isEmpty()) {
