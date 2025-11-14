@@ -7,7 +7,7 @@ import java.util.Arrays;
 
 public enum Unit {
     String("String"),
-    s("Bó"),
+    BOS("Bó"),
     CON("Con"),
     CHEN("Chén"),
     LIT("Lít"),
@@ -32,7 +32,10 @@ public enum Unit {
     DIA("Đĩa"),
     CHAI("Chai"),
     NAI("Nải") ,
+    DOI("Đôi"),
+    QUA("Quả"),
     LUONG("Lượng");
+
 
 
     private final String displayName;

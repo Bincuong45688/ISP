@@ -16,7 +16,7 @@ import java.util.Random;
 @Component
 public class EmailUtil {
 
-    @Value("${SENDGRID_API_KEY}")
+    @Value("${SENDGRID_API_KEY:}")
     private String sendgridApiKey;
 
     // Sinh mã OTP ngẫu nhiên 6 chữ số

@@ -17,12 +17,15 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.List;
 import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
 public class UserChecklistService {
+
+    private static final ZoneId VIETNAM_ZONE = ZoneId.of("Asia/Ho_Chi_Minh");
 
     private final UserChecklistRepository userChecklistRepository;
     private final UserChecklistItemRepository userChecklistItemRepository;
@@ -50,7 +53,7 @@ public class UserChecklistService {
                 .ritual(ritual)
                 .title(request.getTitle())
                 .reminderDate(request.getReminderDate())
-                .createdAt(LocalDateTime.now())
+                .createdAt(LocalDateTime.now(VIETNAM_ZONE))
                 .isNotified(false)
                 .build();
 
@@ -168,7 +171,7 @@ public class UserChecklistService {
         
         // Soft delete
         userChecklist.setIsActive(false);
-        userChecklist.setDeletedAt(LocalDateTime.now());
+        userChecklist.setDeletedAt(LocalDateTime.now(VIETNAM_ZONE));
         userChecklistRepository.save(userChecklist);
     }
 
@@ -195,7 +198,7 @@ public class UserChecklistService {
      * Get checklists that need notification
      */
     public List<UserChecklistDTO> getChecklistsNeedingNotification() {
-        List<UserChecklist> checklists = userChecklistRepository.findChecklistsNeedingNotification(LocalDateTime.now());
+        List<UserChecklist> checklists = userChecklistRepository.findChecklistsNeedingNotification(LocalDateTime.now(VIETNAM_ZONE));
         return checklists.stream()
                 .map(this::convertToDTO)
                 .collect(Collectors.toList());
