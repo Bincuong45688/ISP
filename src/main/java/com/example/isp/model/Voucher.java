@@ -59,8 +59,8 @@ public class Voucher {
     private LocalDateTime updatedAt;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "created_by", foreignKey = @ForeignKey(name = "fk_voucher_staff"))
-    private Staff createdBy;
+    @JoinColumn(name = "created_by", foreignKey = @ForeignKey(name = "fk_voucher_manager"))
+    private Manager createdBy;
 
     @PrePersist
     protected void onCreate() {

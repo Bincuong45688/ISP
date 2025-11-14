@@ -8,6 +8,11 @@ import lombok.experimental.SuperBuilder;
 @NoArgsConstructor
 @AllArgsConstructor
 @SuperBuilder
-public class RegisterStaffRequest extends RegisterRequest {
+public class CreateStaffRequest{
+    private String username;
+    private String password;
+    private String email;
+    private String phone;
     private String staffName;
+    private String gender;
 }

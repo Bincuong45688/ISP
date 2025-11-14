@@ -1,0 +1,10 @@
+package com.example.isp.repository;
+
+import com.example.isp.model.Manager;
+import org.springframework.data.jpa.repository.JpaRepository;
+
+import java.util.Optional;
+
+public interface ManagerRepository extends JpaRepository<Manager, Long> {
+    Optional<Manager> findByAccountUsername(String username);
+}

@@ -41,5 +41,5 @@ public class CreateVoucherRequest {
 
     private Boolean isActive = true;
 
-    private Long createdBy; // Staff ID
+    private Long createdBy; // Manager ID
 }

@@ -6,9 +6,9 @@ import com.example.isp.dto.request.UpdateVoucherRequest;
 import com.example.isp.dto.response.VoucherDiscountResponse;
 import com.example.isp.dto.response.VoucherResponse;
 import com.example.isp.model.enums.DiscountType;
-import com.example.isp.model.Staff;
+import com.example.isp.model.Manager;
 import com.example.isp.model.Voucher;
-import com.example.isp.repository.StaffRepository;
+import com.example.isp.repository.ManagerRepository;
 import com.example.isp.repository.VoucherRepository;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
@@ -27,10 +27,10 @@ import java.util.stream.Collectors;
 public class VoucherService {
 
     private final VoucherRepository voucherRepository;
-    private final StaffRepository staffRepository;
+    private final ManagerRepository managerRepository;
 
     /**
-     * Create new voucher (Staff only)
+     * Create new voucher (Manager only)
      */
     @Transactional
     public VoucherResponse createVoucher(CreateVoucherRequest request) {
@@ -81,10 +81,10 @@ public class VoucherService {
             throw new IllegalArgumentException("Giới hạn sử dụng phải lớn hơn 0");
         }
 
-        // Get staff if provided
-        Staff staff = null;
+        // Get manager if provided
+        Manager manager = null;
         if (request.getCreatedBy() != null) {
-            staff = staffRepository.findById(request.getCreatedBy())
+            manager = managerRepository.findById(request.getCreatedBy())
                     .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy nhân viên với ID: " + request.getCreatedBy()));
         }
 
@@ -101,7 +101,7 @@ public class VoucherService {
                 .startDate(request.getStartDate())
                 .endDate(request.getEndDate())
                 .isActive(request.getIsActive() != null ? request.getIsActive() : true)
-                .createdBy(staff)
+                .createdBy(manager)
                 .build();
 
         voucher = voucherRepository.save(voucher);
@@ -324,8 +324,8 @@ public class VoucherService {
                 .isValid(voucher.isValid())
                 .createdAt(voucher.getCreatedAt())
                 .updatedAt(voucher.getUpdatedAt())
-                .createdBy(voucher.getCreatedBy() != null ? voucher.getCreatedBy().getStaffId() : null)
-                .createdByName(voucher.getCreatedBy() != null ? voucher.getCreatedBy().getStaffName() : null)
+                .createdBy(voucher.getCreatedBy() != null ? voucher.getCreatedBy().getManagerId() : null)
+                .createdByName(voucher.getCreatedBy() != null ? voucher.getCreatedBy().getManagerName() : null)
                 .build();
     }
 }
