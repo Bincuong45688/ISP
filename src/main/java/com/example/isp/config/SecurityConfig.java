@@ -102,7 +102,10 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.POST, "/api/vouchers/apply").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/vouchers/confirm/**").permitAll()
 
-
+                                .requestMatchers(HttpMethod.POST, "/api/feedbacks").permitAll()
+                                .requestMatchers(HttpMethod.PUT, "/api/feedbacks/**").permitAll()
+                                .requestMatchers(HttpMethod.DELETE, "/api/feedbacks/**").permitAll()
+                                .requestMatchers(HttpMethod.GET, "/api/feedbacks/**").permitAll()
 //
                         // Customers can apply vouchers
 

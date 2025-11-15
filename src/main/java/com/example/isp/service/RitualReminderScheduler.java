@@ -8,6 +8,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
+import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 
@@ -16,6 +17,8 @@ import java.util.List;
 @Slf4j
 public class RitualReminderScheduler {
 
+    private static final ZoneId VIETNAM_ZONE = ZoneId.of("Asia/Ho_Chi_Minh");
+    
     private final UserChecklistService userChecklistService;
     private final EmailService emailService;
     private final CustomerRepository customerRepository;
@@ -68,7 +71,9 @@ public class RitualReminderScheduler {
         }
 
         String reminderDateStr = checklist.getReminderDate() != null
-                ? checklist.getReminderDate().format(DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm"))
+                ? checklist.getReminderDate()
+                    .atZone(VIETNAM_ZONE)
+                    .format(DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm"))
                 : "N/A";
 
         emailService.sendRitualReminder(
