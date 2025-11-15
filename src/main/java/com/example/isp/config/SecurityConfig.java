@@ -42,7 +42,7 @@ public class SecurityConfig {
                         // Swagger
                         .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
                                        
-                        .requestMatchers(HttpMethod.GET, "/api/staff/orders/top-selling").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/manager/orders/top-selling").permitAll()
                                        
                         // Auth public
                         .requestMatchers(HttpMethod.POST,
@@ -52,11 +52,11 @@ public class SecurityConfig {
                                 "/api/customer/forgot-password",
                                 "/api/customer/verify-reset-otp",
                                 "/api/customer/reset-password",
-                                "/api/staff/login",
-                                "/api/staff/register",
+                                "/api/manager/login",
+                                "/api/manager/register",
                                 "/api/v1/blogs",
-                                "/api/shipper/login"
-
+                                "/api/shipper/login",
+                                "/api/staff/login"
                         ).permitAll()
 
                         // Read public
@@ -69,31 +69,31 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/api/product-details/**").authenticated()
                         .requestMatchers(HttpMethod.GET, "/api/v1/blogs").authenticated()
 
-                        // Write: STAFF
+                        // Write: MANAGER
                         .requestMatchers(HttpMethod.POST,
                                 "/api/categories/**", "/api/products/**", "/api/product-details/**", "/api/product-details/*/assign-checklists","/api/checklists/**","/api/v1/blogs","/api/checklist-items/**","/api/rituals/**", "/api/regions/**"
-                        ).hasAnyAuthority("ROLE_STAFF","STAFF")
+                        ).hasRole("MANAGER")
                         .requestMatchers(HttpMethod.PUT,
                                 "/api/categories/**", "/api/products/**", "/api/product-details/**","/api/checklists/**", "/aapi/checklist-items/**","/api/rituals/**","/api/v1/blogs","/api/regions/**"
-                        ).hasAnyAuthority("ROLE_STAFF","STAFF")
+                        ).hasRole("MANAGER")
                         .requestMatchers(HttpMethod.DELETE,
                                 "/api/categories/**", "/api/products/**", "/api/product-details/**","/api/checklists/**","/api/checklist-items/**", "/api/rituals/**","/api/regions/**","/api/v1/blogs"
-                        ).hasAnyAuthority("ROLE_STAFF","STAFF")
+                        ).hasRole("MANAGER")
 
-                        // Uploads: STAFF
-                        .requestMatchers(HttpMethod.POST, "/api/uploads/**").hasAnyAuthority("ROLE_STAFF","STAFF")
-                        .requestMatchers(HttpMethod.DELETE, "/api/uploads/**").hasAnyAuthority("ROLE_STAFF","STAFF")
+                        // Uploads: MANAGER
+                        .requestMatchers(HttpMethod.POST, "/api/uploads/**").hasRole("MANAGER")
+                        .requestMatchers(HttpMethod.DELETE, "/api/uploads/**").hasRole("MANAGER")
 
-                        // Create account Shipper by Staff
-                        .requestMatchers(HttpMethod.POST, "/api/staff/shippers/**")
-                        .hasAnyAuthority("ROLE_STAFF","STAFF")
+                        // Create account Shipper & Staff by Manager
+                        .requestMatchers(HttpMethod.POST, "/api/manager/shippers/**", "/api/manager/staff/**")
+                        .hasRole("MANAGER")
 
                         // ===== User Checklists: CUSTOMER có toàn quyền =====
                         .requestMatchers("/api/user-checklists/**").hasAnyAuthority("ROLE_CUSTOMER","CUSTOMER")
                         .requestMatchers("/api/user-checklist-items/**").hasAnyAuthority("ROLE_CUSTOMER","CUSTOMER")
 
                         // ===== Vouchers =====
-                        // Staff can manage vouchers (CRUD)
+                        // Manager can manage vouchers (CRUD)
                         .requestMatchers(HttpMethod.POST, "/api/vouchers").permitAll()
                         .requestMatchers(HttpMethod.PUT, "/api/vouchers/**").permitAll()
                         .requestMatchers(HttpMethod.DELETE, "/api/vouchers/**").permitAll()
@@ -133,9 +133,9 @@ public class SecurityConfig {
                         .requestMatchers("/api/customer/orders/**")
                         .hasAnyAuthority("ROLE_CUSTOMER", "CUSTOMER")
 
-                        // STAFF (xác nhận, gán shipper, hủy)
-                        .requestMatchers("/api/staff/orders/**")
-                        .hasAnyAuthority("ROLE_STAFF", "STAFF")
+                        // MANAGER và STAFF (xác nhận, gán shipper, hủy)
+                        .requestMatchers("/api/manager/orders/**")
+                        .hasAnyRole("MANAGER", "STAFF")
 
                         // SHIPPER (xem và hoàn tất đơn)
                         .requestMatchers("/api/shipper/orders/**")

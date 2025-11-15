@@ -1,5 +1,5 @@
 package com.example.isp.model.enums;
 
 public enum Role {
-    CUSTOMER, STAFF, SHIPPER
+    CUSTOMER, MANAGER, STAFF, SHIPPER
 }

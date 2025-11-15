@@ -33,7 +33,7 @@ public class VoucherController {
     private final VoucherService voucherService;
 
     /**
-     * Create new voucher (Staff only)
+     * Create new voucher (Manager only)
      * POST /api/vouchers
      */
     @PostMapping
@@ -183,7 +183,7 @@ public class VoucherController {
     }
 
     /**
-     * Deactivate expired vouchers (Admin/Staff only)
+     * Deactivate expired vouchers (Manager only)
      * POST /api/vouchers/deactivate-expired
      */
     @PostMapping("/deactivate-expired")

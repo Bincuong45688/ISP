@@ -9,14 +9,19 @@ import lombok.*;
 @Builder
 public class Staff {
 
-    @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "staff_id")
     private Long staffId;
 
-    @Column(name = "staff_name")
+    @Column(name = "staff_name", nullable = false)
     private String staffName;
 
-    @OneToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "account_id")
+    @Column(name = "gender")
+    private String gender;
+
+    @OneToOne
+    @JoinColumn(name = "account_id", nullable = false)
     private Account account;
+
 }

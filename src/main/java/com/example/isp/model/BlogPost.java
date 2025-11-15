@@ -30,7 +30,7 @@ public class BlogPost {
     private String category;
     private String thumbnailUrl;
 
-    // ✅ Thay thế Staff bằng tên tác giả (String)
+    // ✅ Thay thế Manager bằng tên tác giả (String)
     private String authorName;
 
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "dd/MM/yyyy HH:mm", timezone = "Asia/Ho_Chi_Minh")

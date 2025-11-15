@@ -1,14 +1,14 @@
 package com.example.isp.dto.response;
 
-import lombok.*;
+import lombok.Builder;
+import lombok.Data;
 
-@Getter @Setter
-@NoArgsConstructor @AllArgsConstructor @Builder
+@Data
+@Builder
 public class StaffResponse {
-    private Long id;
+    private Long staffId;
     private String staffName;
-    private String username;
     private String email;
     private String phone;
-    private String role;
+    private String gender;
 }
