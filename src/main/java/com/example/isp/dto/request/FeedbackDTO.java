@@ -15,4 +15,6 @@ public class FeedbackDTO {
     private String content;    // Nội dung feedback
     private int star;          // Số sao (1–5)
     private LocalDateTime createdAt; // Tùy chọn (có thể set trong backend)
+    private String imageUrls;
+    private String videoUrls;
 }

@@ -36,7 +36,9 @@ public class FeedbackService {
                 "User " + f.getUserId(), // Sau có thể join sang User table
                 f.getContent(),
                 f.getStar(),
-                f.getCreatedAt()
+                f.getCreatedAt(),
+                f.getImageUrls(),
+                f.getVideoUrls()
         ));
     }
 
@@ -52,7 +54,9 @@ public class FeedbackService {
                 "User " + saved.getUserId(),
                 saved.getContent(),
                 saved.getStar(),
-                saved.getCreatedAt()
+                saved.getCreatedAt(),
+                saved.getImageUrls(),
+                saved.getVideoUrls()
         );
     }
 
@@ -73,7 +77,9 @@ public class FeedbackService {
                 "User " + updated.getUserId(),
                 updated.getContent(),
                 updated.getStar(),
-                updated.getCreatedAt()
+                updated.getCreatedAt(),
+                updated.getImageUrls(),
+                updated.getVideoUrls()
         );
     }
 

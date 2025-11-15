@@ -24,6 +24,14 @@ public class Feedback {
 
     private int star;
 
+    String imageUrl;
+    @Column(length = 1000)
+    private String imageUrls; // Lưu nhiều URL hình ảnh, cách nhau bằng dấu phẩy
+    
+    String videoUrl;
+    @Column(length = 1000)
+    private String videoUrls; // Lưu nhiều URL video, cách nhau bằng dấu phẩy
+
     private LocalDateTime createdAt = LocalDateTime.now();
 }
 

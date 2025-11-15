@@ -12,10 +12,11 @@ import java.time.LocalDateTime;
 public class FeedbackDTORespone {
     private Long fbId;
     private Long orderId;
-
     private String userName;
     private String content;
     private int star;
     private LocalDateTime createdAt;
+    private String imageUrls;
+    private String videoUrls;
 }
 
