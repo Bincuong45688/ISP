@@ -1,7 +1,9 @@
 package com.example.isp.model;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.annotations.CreationTimestamp;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -28,9 +30,13 @@ public class UserChecklist {
     @Column(name = "title", nullable = false)
     private String title;
 
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "Asia/Ho_Chi_Minh")
+    @CreationTimestamp
     @Column(name = "created_at", nullable = false)
     private LocalDateTime createdAt;
 
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "Asia/Ho_Chi_Minh")
+    @CreationTimestamp
     @Column(name = "reminder_date")
     private LocalDateTime reminderDate;
 
@@ -42,6 +48,8 @@ public class UserChecklist {
     @Column(name = "is_active")
     private Boolean isActive = true;
 
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "Asia/Ho_Chi_Minh")
+    @CreationTimestamp
     @Column(name = "deleted_at")
     private LocalDateTime deletedAt;
 

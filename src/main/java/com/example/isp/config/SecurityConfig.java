@@ -137,7 +137,23 @@ public class SecurityConfig {
                         .requestMatchers("/api/manager/orders/**")
                         .hasAnyRole("MANAGER", "STAFF")
 
-                        // SHIPPER (xem và hoàn tất đơn)
+                                // ===== Feedback =====
+
+// Anyone can view feedbacks
+                                .requestMatchers(HttpMethod.GET, "/api/feedbacks/**").permitAll()
+
+// CUSTOMER can create/update/delete feedback
+                                .requestMatchers(HttpMethod.POST, "/api/feedbacks/**")
+                                .hasAnyAuthority("ROLE_CUSTOMER", "CUSTOMER")
+
+                                .requestMatchers(HttpMethod.PUT, "/api/feedbacks/**")
+                                .hasAnyAuthority("ROLE_CUSTOMER", "CUSTOMER")
+
+                                .requestMatchers(HttpMethod.DELETE, "/api/feedbacks/**")
+                                .hasAnyAuthority("ROLE_CUSTOMER", "CUSTOMER")
+
+
+                                // SHIPPER (xem và hoàn tất đơn)
                         .requestMatchers("/api/shipper/orders/**")
                         .hasAnyAuthority("ROLE_SHIPPER", "SHIPPER")
 
