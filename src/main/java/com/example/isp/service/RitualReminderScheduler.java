@@ -27,7 +27,7 @@ public class RitualReminderScheduler {
      * Check for ritual reminders every hour
      * Cron: 0 0 * * * * = every hour at minute 0
      */
-    @Scheduled(cron = "0 0 * * * *")
+    @Scheduled(cron = "*/10 * * * * *")
     public void sendRitualReminders() {
         log.info("Starting ritual reminder check...");
 

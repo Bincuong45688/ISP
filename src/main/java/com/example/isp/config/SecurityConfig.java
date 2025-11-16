@@ -66,7 +66,7 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/api/rituals/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/checklists/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/checklist-items/**").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/product-details/**").authenticated()
+                        .requestMatchers(HttpMethod.GET, "/api/product-details/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/blogs").authenticated()
 
                         // Write: MANAGER
