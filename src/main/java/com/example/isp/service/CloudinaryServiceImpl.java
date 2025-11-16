@@ -36,4 +36,20 @@ public class CloudinaryServiceImpl implements CloudinaryService {
             throw new RuntimeException("Upload Cloudinary failed: " + e.getMessage(), e);
         }
     }
+    @Override
+    public String uploadVideo(MultipartFile file, String folder) {
+        try {
+            Map<?, ?> res = cloudinary.uploader().upload(
+                    file.getBytes(),
+                    ObjectUtils.asMap(
+                            "folder", folder != null ? folder : defaultFolder,
+                            "resource_type", "video",
+                            "overwrite", true
+                    )
+            );
+            return (String) res.get("secure_url");
+        } catch (IOException e) {
+            throw new RuntimeException("Upload video to Cloudinary failed: " + e.getMessage(), e);
+        }
+    }
 }

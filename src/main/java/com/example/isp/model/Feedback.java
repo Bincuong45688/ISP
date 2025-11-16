@@ -1,37 +1,51 @@
 package com.example.isp.model;
 
-
 import jakarta.persistence.*;
 import lombok.*;
 import java.time.LocalDateTime;
 
 @Entity
-@Data
+@Table(name = "feedbacks")
+@Getter
+@Setter
 @NoArgsConstructor
 @AllArgsConstructor
-@Table(name = "feedbacks")
+@Builder
 public class Feedback {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "fb_id")
     private Long fbId;
 
+    @Column(name = "order_id", nullable = false)
     private Long orderId;
+
+    @Column(name = "user_id", nullable = false)
     private Long userId;
+
+    @Column(name = "product_id", nullable = false)
+    private Long productId;
 
     @Column(length = 1000)
     private String content;
 
     private int star;
 
-    String imageUrl;
-    @Column(length = 1000)
-    private String imageUrls; // Lưu nhiều URL hình ảnh, cách nhau bằng dấu phẩy
-    
-    String videoUrl;
-    @Column(length = 1000)
-    private String videoUrls; // Lưu nhiều URL video, cách nhau bằng dấu phẩy
+    // Ảnh đơn
+    @Column(name = "image_url", length = 500)
+    private String imageUrl;
 
-    private LocalDateTime createdAt = LocalDateTime.now();
+    // Nhiều ảnh (phân cách bằng dấu phẩy)
+    @Column(name = "image_urls", length = 2000)
+    private String imageUrls;
+
+
+    @Column(name = "created_at")
+    private LocalDateTime createdAt;
+
+    @PrePersist
+    protected void onCreate() {
+        this.createdAt = LocalDateTime.now();
+    }
 }
-
