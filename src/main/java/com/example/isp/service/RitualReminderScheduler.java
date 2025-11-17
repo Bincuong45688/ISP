@@ -18,7 +18,7 @@ import java.util.List;
 public class RitualReminderScheduler {
 
     private static final ZoneId VIETNAM_ZONE = ZoneId.of("Asia/Ho_Chi_Minh");
-    
+
     private final UserChecklistService userChecklistService;
     private final EmailService emailService;
     private final CustomerRepository customerRepository;
@@ -27,7 +27,7 @@ public class RitualReminderScheduler {
      * Check for ritual reminders every hour
      * Cron: 0 0 * * * * = every hour at minute 0
      */
-    @Scheduled(cron = "*/10 * * * * *")
+    @Scheduled(cron = "0 0 * * * *")
     public void sendRitualReminders() {
         log.info("Starting ritual reminder check...");
 
@@ -72,8 +72,8 @@ public class RitualReminderScheduler {
 
         String reminderDateStr = checklist.getReminderDate() != null
                 ? checklist.getReminderDate()
-                    .atZone(VIETNAM_ZONE)
-                    .format(DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm"))
+                .atZone(VIETNAM_ZONE)
+                .format(DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm"))
                 : "N/A";
 
         emailService.sendRitualReminder(
